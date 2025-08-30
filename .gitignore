@@ -17,6 +17,8 @@ install-serena.sh
 .pytest_cache
 .ruff_cache
 .mypy_cache
-.pytest_cache
-.ruff_cache
-.mypy_cache
+
+# CLI tool dependencies
+cli/node_modules/
+cli/package-lock.json
+cli/*.log
