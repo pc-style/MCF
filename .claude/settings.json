@@ -22,6 +22,15 @@
             "command": "$CLAUDE_CONFIG_DIR/hooks/serena_context_suggestions.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/agent_command_suggestions.py",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SessionStart": [

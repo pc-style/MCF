@@ -1,0 +1,71 @@
+name: "React Component Library"
+type: "library-react"
+version: "1.2.0"
+description: "A modern React component library with TypeScript support and Storybook integration"
+author: "MCF Community"
+license: "MIT"
+tags: ["react", "typescript", "storybook", "components", "library"]
+parameters:
+  - key: "library_name"
+    label: "Library Name"
+    type: "text"
+    description: "Name of your component library"
+    required: true
+    placeholder: "my-component-lib"
+    validation: "^[a-z][a-z0-9-]*$"
+  - key: "author_name"
+    label: "Author Name"
+    type: "text"
+    description: "Your name as the library author"
+    required: true
+    placeholder: "Your Name"
+  - key: "include_storybook"
+    label: "Include Storybook"
+    type: "boolean"
+    description: "Add Storybook for component documentation"
+    default: true
+  - key: "ui_framework"
+    label: "UI Framework"
+    type: "select"
+    description: "Choose a UI framework for base components"
+    options: ["none", "material-ui", "ant-design", "chakra-ui"]
+    default: "none"
+dependencies:
+  - "react"
+  - "typescript"
+  - "@types/react"
+files:
+  - path: "package.json"
+    type: "file"
+    template: true
+  - path: "tsconfig.json"
+    type: "file"
+    template: true
+  - path: "src"
+    type: "directory"
+  - path: "src/components"
+    type: "directory"
+  - path: "src/components/Button"
+    type: "directory"
+  - path: "src/components/Button/Button.tsx"
+    type: "file"
+    template: true
+  - path: "src/components/Button/Button.stories.tsx"
+    type: "file"
+    template: true
+  - path: "src/index.ts"
+    type: "file"
+    template: true
+  - path: ".storybook"
+    type: "directory"
+  - path: ".storybook/main.ts"
+    type: "file"
+    template: true
+scripts:
+  build: "tsc && vite build"
+  dev: "storybook dev -p 6006"
+  test: "jest"
+metadata:
+  complexity: "intermediate"
+  estimated_time: "30-45 minutes"
+  category: "Frontend Development"

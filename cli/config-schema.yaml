@@ -1,0 +1,331 @@
+sections:
+  - name: "Project Information"
+    description: "Basic project configuration and metadata"
+    optional: false
+    fields:
+      - key: "project_name"
+        label: "Project Name"
+        type: "text"
+        required: true
+        description: "A unique name for your MCF project"
+        placeholder: "my-awesome-project"
+        help_text: "Used for configuration files, templates, and identification"
+        validation:
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$"
+          min_length: 1
+          max_length: 50
+          required: true
+
+      - key: "project_type"
+        label: "Project Type"
+        type: "select"
+        required: true
+        description: "Type of project for optimal configuration"
+        default: "general"
+        options:
+          - value: "general"
+            label: "General Development"
+            description: "Mixed or general purpose development"
+            default: true
+          - value: "web"
+            label: "Web Application"
+            description: "Frontend/backend web development"
+          - value: "api"
+            label: "API/Microservice"
+            description: "REST/GraphQL API or microservice"
+          - value: "mobile"
+            label: "Mobile Application"
+            description: "iOS/Android mobile development"
+          - value: "cli"
+            label: "CLI Tool"
+            description: "Command-line application"
+          - value: "library"
+            label: "Library/Package"
+            description: "Reusable library or package"
+        validation:
+          enum: ["general", "web", "api", "mobile", "cli", "library"]
+          required: true
+
+      - key: "project_description"
+        label: "Description"
+        type: "text"
+        required: false
+        description: "Brief description of the project (optional)"
+        placeholder: "A sophisticated application that..."
+        help_text: "Used in generated documentation and templates"
+        validation:
+          max_length: 200
+
+  - name: "Developer Information"
+    description: "Your preferences and development environment"
+    optional: false
+    fields:
+      - key: "developer_name"
+        label: "Your Name"
+        type: "text"
+        required: true
+        description: "Your full name for git configuration and templates"
+        placeholder: "John Doe"
+        validation:
+          min_length: 2
+          max_length: 100
+          required: true
+
+      - key: "developer_email"
+        label: "Email Address"
+        type: "email"
+        required: true
+        description: "Your email for git commits and notifications"
+        placeholder: "john@example.com"
+        validation:
+          required: true
+
+      - key: "preferred_editor"
+        label: "Preferred Editor/IDE"
+        type: "select"
+        required: false
+        description: "Your primary development environment"
+        default: "auto-detect"
+        options:
+          - value: "auto-detect"
+            label: "Auto-detect"
+            description: "Automatically detect from environment"
+            default: true
+          - value: "vscode"
+            label: "Visual Studio Code"
+            description: "Microsoft Visual Studio Code"
+          - value: "vim"
+            label: "Vim/Neovim"
+            description: "Vim or Neovim editor"
+          - value: "emacs"
+            label: "Emacs"
+            description: "GNU Emacs editor"
+          - value: "jetbrains"
+            label: "JetBrains IDEs"
+            description: "IntelliJ, GoLand, WebStorm, etc."
+          - value: "sublime"
+            label: "Sublime Text"
+            description: "Sublime Text editor"
+          - value: "atom"
+            label: "Atom"
+            description: "GitHub Atom editor"
+          - value: "other"
+            label: "Other"
+            description: "Other editor or IDE"
+        validation:
+          enum:
+            [
+              "auto-detect",
+              "vscode",
+              "vim",
+              "emacs",
+              "jetbrains",
+              "sublime",
+              "atom",
+              "other",
+            ]
+
+  - name: "Feature Selection"
+    description: "Choose which MCF features to enable"
+    optional: false
+    fields:
+      - key: "enable_git_integration"
+        label: "Git Integration"
+        type: "boolean"
+        required: false
+        description: "Enable automated Git workflows and hooks"
+        default: true
+        help_text: "Provides /gh:* commands for streamlined git operations"
+
+      - key: "enable_serena_integration"
+        label: "Serena Semantic Analysis"
+        type: "boolean"
+        required: false
+        description: "Enable advanced semantic code analysis and navigation"
+        default: false
+        help_text: "Provides IDE-like code understanding with massive token savings"
+        conditionals:
+          - field: "project_type"
+            operation: "in"
+            value: ["web", "api", "cli", "library"]
+            action: "recommend_enable"
+
+      - key: "enable_security_features"
+        label: "Security Features"
+        type: "boolean"
+        required: false
+        description: "Enable security auditing and input validation"
+        default: true
+        help_text: "Provides security analysis, input validation, and audit logging"
+
+      - key: "enable_performance_monitoring"
+        label: "Performance Monitoring"
+        type: "boolean"
+        required: false
+        description: "Enable resource usage tracking and optimization suggestions"
+        default: false
+        help_text: "Monitors resource usage and suggests performance improvements"
+
+      - key: "enable_template_system"
+        label: "Template System"
+        type: "boolean"
+        required: false
+        description: "Enable project scaffolding and template management"
+        default: true
+        help_text: "Provides /templates:* commands for rapid project scaffolding"
+
+      - key: "selected_agents"
+        label: "AI Agents"
+        type: "multi_select"
+        required: false
+        description: "Select which specialized AI agents to activate"
+        default: ["micro-executor", "docs-researcher", "micro-analyzer"]
+        options:
+          - value: "api-designer"
+            label: "API Designer"
+            description: "RESTful/GraphQL API design specialist"
+          - value: "devops-engineer"
+            label: "DevOps Engineer"
+            description: "Infrastructure & deployment specialist"
+          - value: "docs-researcher"
+            label: "Documentation Researcher"
+            description: "Documentation research and analysis"
+          - value: "micro-analyzer"
+            label: "Micro Analyzer"
+            description: "Lightweight code analysis specialist"
+          - value: "micro-executor"
+            label: "Micro Executor"
+            description: "Focused task execution specialist"
+          - value: "micro-researcher"
+            label: "Micro Researcher"
+            description: "Quick documentation research"
+          - value: "perf-optimizer"
+            label: "Performance Optimizer"
+            description: "Performance analysis specialist"
+          - value: "security-auditor"
+            label: "Security Auditor"
+            description: "Security vulnerability specialist"
+          - value: "semantic-navigator"
+            label: "Semantic Navigator"
+            description: "Serena semantic code navigation specialist"
+
+  - name: "Advanced Configuration"
+    description: "Advanced settings and integrations"
+    optional: true
+    dependencies: ["enable_serena_integration", "enable_security_features"]
+    conditionals:
+      - field: "enable_serena_integration"
+        operation: "equals"
+        value: true
+        action: "show_section"
+    fields:
+      - key: "serena_analysis_depth"
+        label: "Serena Analysis Depth"
+        type: "select"
+        required: false
+        description: "Level of semantic analysis to perform"
+        default: "balanced"
+        options:
+          - value: "light"
+            label: "Light Analysis"
+            description: "Basic symbol discovery and references"
+          - value: "balanced"
+            label: "Balanced Analysis"
+            description: "Comprehensive analysis with good performance"
+            default: true
+          - value: "deep"
+            label: "Deep Analysis"
+            description: "Maximum analysis depth (slower but thorough)"
+        validation:
+          enum: ["light", "balanced", "deep"]
+
+      - key: "custom_hooks"
+        label: "Custom Hook Scripts"
+        type: "text"
+        required: false
+        description: "Comma-separated list of custom hook script names"
+        placeholder: "my-formatter, custom-linter, deploy-hook"
+        help_text: "Names of custom Python scripts in .claude/hooks/ directory"
+        validation:
+          pattern: "^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$"
+
+      - key: "integration_apis"
+        label: "External API Integrations"
+        type: "multi_select"
+        required: false
+        description: "Select external services to integrate with"
+        options:
+          - value: "github"
+            label: "GitHub API"
+            description: "Enhanced GitHub integration for issues, PRs, etc."
+          - value: "jira"
+            label: "Jira"
+            description: "Issue tracking and project management"
+          - value: "slack"
+            label: "Slack"
+            description: "Team communication and notifications"
+          - value: "discord"
+            label: "Discord"
+            description: "Community and team communication"
+
+  - name: "Environment Configuration"
+    description: "Development environment and deployment settings"
+    optional: true
+    fields:
+      - key: "default_branch"
+        label: "Default Git Branch"
+        type: "text"
+        required: false
+        description: "Default branch name for new repositories"
+        default: "main"
+        placeholder: "main"
+        validation:
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9/_-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$"
+          max_length: 50
+
+      - key: "working_hours"
+        label: "Working Hours"
+        type: "text"
+        required: false
+        description: "Your typical working hours (for scheduling and notifications)"
+        default: "9-17"
+        placeholder: "9-17"
+        help_text: "Format: HH-HH (24-hour format) or 'flexible'"
+        validation:
+          pattern: "^\\d{1,2}-\\d{1,2}$|^flexible$"
+
+      - key: "timezone"
+        label: "Timezone"
+        type: "text"
+        required: false
+        description: "Your timezone for scheduling and timestamps"
+        placeholder: "America/New_York"
+        help_text: "Use IANA timezone format (e.g., America/New_York, Europe/London)"
+
+  - name: "Privacy & Telemetry"
+    description: "Data collection and privacy preferences"
+    optional: false
+    fields:
+      - key: "telemetry_enabled"
+        label: "Enable Telemetry"
+        type: "boolean"
+        required: false
+        description: "Allow anonymous usage data collection to improve MCF"
+        default: false
+        help_text: "Helps improve MCF by sharing anonymous usage statistics"
+
+      - key: "auto_update"
+        label: "Automatic Updates"
+        type: "boolean"
+        required: false
+        description: "Automatically check for and install MCF updates"
+        default: true
+        help_text: "Keeps MCF up to date with the latest features and security patches"
+
+      - key: "crash_reporting"
+        label: "Crash Reporting"
+        type: "boolean"
+        required: false
+        description: "Send crash reports to help diagnose issues"
+        default: false
+        help_text: "Helps identify and fix bugs by sending anonymous crash reports"

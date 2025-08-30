@@ -281,6 +281,7 @@ install_mcf_files() {
 install_serena_mcp_server() {
     info "Installing Serena MCP server..."
     log "Installing Serena MCP server in $MCF_DIR/.claude"
+    CLAUDE_CONFIG_DIR="$MCF_DIR/.claude" claude mcp add --transport http context7 https://mcp.context7.com/mcp
     CLAUDE_CONFIG_DIR="$MCF_DIR/.claude" claude mcp add serena --scope user -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server
 }
 

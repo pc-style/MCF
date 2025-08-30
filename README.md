@@ -1,13 +1,21 @@
 # MCF - Multi Component Framework
 
-A sophisticated development automation platform built around Claude Code integration, featuring intelligent hooks, custom commands, comprehensive documentation, and **semantic code analysis via Serena integration**.
+A sophisticated development automation platform with **Interactive TUI Interface**, featuring intelligent hooks, custom commands, comprehensive documentation, and semantic code analysis via Serena integration.
 
 ## 📁 Project Structure
 
 ```
 MCF/
+├── cli/                              # Interactive TUI Interface
+│   ├── main.go                       # Main TUI application with Bubble Tea
+│   ├── installer.go                  # Interactive installation wizard
+│   ├── configurator.go              # Configuration editor with live validation
+│   ├── mcf_runner.go                # MCF operation runner interface
+│   ├── template_browser.go          # Template browser and installer
+│   └── config.go                    # Configuration management system
+│
 ├── .claude/                          # Claude Code configuration hub
-│   ├── agents/                       # Specialized AI agents (9 total)
+│   ├── agents/                       # Specialized AI agents (15 total)
 │   │   ├── api-designer.md           # RESTful/GraphQL API design specialist
 │   │   ├── devops-engineer.md        # Infrastructure & deployment specialist
 │   │   ├── docs-researcher.md        # Documentation research specialist
@@ -16,7 +24,12 @@ MCF/
 │   │   ├── micro-researcher.md       # Quick documentation research
 │   │   ├── perf-optimizer.md         # Performance analysis specialist
 │   │   ├── security-auditor.md       # Security vulnerability specialist
-│   │   └── semantic-navigator.md     # Serena semantic code navigation specialist
+│   │   ├── semantic-navigator.md     # Serena semantic code navigation specialist
+│   │   ├── mcf-hook-specialist.md    # MCF hook system specialist
+│   │   ├── mcf-template-specialist.md # MCF template engine specialist
+│   │   ├── go-tui-expert.md          # Go TUI development expert
+│   │   ├── claude-command-designer.md # Claude Code slash command designer
+│   │   └── mcf-integration-architect.md # MCF system integration specialist
 │   │
 │   ├── commands/                     # Custom slash commands
 │   │   ├── context/                  # Context management commands
@@ -92,7 +105,16 @@ MCF/
 
 ## 🚀 Features
 
-### **🧠 Semantic Code Analysis (NEW!)**
+### **🖥️ Interactive TUI Interface (NEW!)**
+
+- **Full-Featured Terminal UI**: Beautiful Bubble Tea interface for all MCF operations
+- **Interactive Installation Wizard**: 11-step guided setup with progress tracking
+- **Live Configuration Editor**: Schema-driven forms with real-time validation
+- **MCF Operation Runner**: Execute agents, commands, and templates with visual feedback
+- **Template Browser**: Browse, preview, and install project templates
+- **Multi-Modal Navigation**: Main menu, escape-key navigation, keyboard shortcuts
+
+### **🧠 Semantic Code Analysis**
 
 - **Serena Integration**: IDE-like semantic code understanding and navigation
 - **Symbol-Level Operations**: Work with functions, classes, and variables directly
@@ -102,7 +124,8 @@ MCF/
 
 ### **🤖 AI Agent System**
 
-- **9 Specialized Agents**: Each optimized for specific development tasks (including new semantic-navigator)
+- **15 Specialized Agents**: Each optimized for specific development tasks
+- **MCF-Specific Agents**: Hook specialist, template specialist, TUI expert, integration architect
 - **Semantic Enhancement**: All agents upgraded with Serena semantic capabilities
 - **Micro Agents**: Lightweight, focused execution with minimal context usage
 - **Domain Experts**: API design, DevOps, security, performance optimization
@@ -176,16 +199,30 @@ MCF/
 
 ## 🚀 Quick Start
 
-### **Standard Setup**
+### **TUI Interface (Recommended)**
 
-1. **Clone the repository**:
+1. **Clone and build**:
 
    ```bash
    git clone <your-repo-url>
    cd MCF
+   go build -o mcf ./cli
    ```
 
-2. **Initialize Claude Code**:
+2. **Launch interactive interface**:
+
+   ```bash
+   ./mcf
+   ```
+
+3. **Follow the installation wizard**:
+   - Choose "📦 Install/Setup" from main menu
+   - Complete the 11-step guided installation
+   - Configure Claude Code integration automatically
+
+### **Command Line Setup**
+
+1. **Initialize Claude Code**:
 
    ```bash
    claude --project .
@@ -213,30 +250,52 @@ MCF/
 
 ### **Start Using**
 
-6. **Try semantic code analysis**:
+#### **With TUI Interface**
+
+6. **Use the interactive interface**:
+   - **🚀 Run Claude MCF**: Execute agents and commands
+   - **🧩 Template Browser**: Browse and install templates
+   - **⚙️ Configure**: Live configuration editing
+   - **📦 Install/Setup**: Re-run installation or updates
+
+#### **With Command Line**
+
+7. **Try semantic code analysis**:
 
    ```
    /serena:overview                    # See project structure
    /serena:find MyFunction             # Find specific symbols
    ```
 
-7. **Try workflow commands**:
+8. **Try workflow commands**:
 
    ```
    /gh:push                           # Git workflow
    ```
 
-8. **Get contextual suggestions**:
+9. **Get contextual suggestions**:
    - The hooks will automatically suggest relevant commands based on your work
 
-9. **Explore available commands**:
-   ```
-   /help
-   ```
+10. **Explore available commands**:
+    ```
+    /help
+    ```
 
 ## 📖 Usage Examples
 
-### **⭐ NEW: Semantic Code Analysis**
+### **🖥️ Interactive TUI Usage**
+
+```bash
+# Launch main interface
+./mcf
+
+# Direct mode access
+./mcf install          # Direct to installation wizard
+./mcf config           # Direct to configuration editor
+./mcf run              # Direct to MCF runner
+```
+
+### **⭐ Semantic Code Analysis**
 
 ```bash
 /serena:overview                     # Get high-level project structure
@@ -284,11 +343,19 @@ The system is configured through:
 
 ## 🌟 What Makes MCF Special
 
+### **Interactive TUI Excellence**
+
+- **Terminal UI Perfection**: Full-featured interface rivaling desktop applications
+- **Guided Installation**: 11-step wizard handles complex setup automatically
+- **Live Configuration**: Real-time validation and preview of all settings
+- **Visual Operation Tracking**: Progress bars, status indicators, and error handling
+- **Multi-Component Navigation**: Seamless switching between different MCF tools
+
 ### **Semantic Superpowers**
 
 - **10x Token Efficiency**: Work at symbol-level instead of reading entire files
-- **IDE-like Navigation**: Find, analyze, and modify code with surgical precision  
-- **Agent Enhancement**: All 9 agents get semantic code understanding
+- **IDE-like Navigation**: Find, analyze, and modify code with surgical precision
+- **Agent Enhancement**: All 15 agents get semantic code understanding
 - **Smart Suggestions**: Context-aware recommendations for semantic operations
 
 ### **Complete Portability**
@@ -329,4 +396,4 @@ This project contains configuration and documentation for Claude Code, an AI dev
 
 ---
 
-**Built with Claude Code + Serena** - The ultimate development productivity platform combining AI automation with semantic code intelligence. 🚀
+**Built with Claude Code + Serena + Interactive TUI** - The ultimate development productivity platform combining AI automation with semantic code intelligence and beautiful terminal interfaces. 🚀

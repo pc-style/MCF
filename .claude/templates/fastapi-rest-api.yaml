@@ -1,0 +1,73 @@
+name: "REST API with FastAPI"
+type: "api-python"
+version: "2.1.0"
+description: "Production-ready REST API with FastAPI, SQLAlchemy, and Pydantic validation"
+author: "MCF Python Team"
+license: "Apache-2.0"
+tags: ["python", "fastapi", "rest", "api", "sqlalchemy", "postgresql"]
+parameters:
+  - key: "api_name"
+    label: "API Name"
+    type: "text"
+    description: "Name of your API project"
+    required: true
+    placeholder: "my-api"
+    help_text: "Used for database names and documentation"
+  - key: "database_type"
+    label: "Database"
+    type: "select"
+    description: "Choose your database system"
+    options: ["postgresql", "mysql", "sqlite"]
+    default: "postgresql"
+  - key: "include_auth"
+    label: "Authentication"
+    type: "boolean"
+    description: "Include JWT authentication system"
+    default: true
+  - key: "api_version"
+    label: "API Version"
+    type: "text"
+    description: "Initial API version"
+    default: "v1"
+    placeholder: "v1"
+dependencies:
+  - "fastapi"
+  - "uvicorn"
+  - "sqlalchemy"
+  - "pydantic"
+  - "python-multipart"
+files:
+  - path: "main.py"
+    type: "file"
+    template: true
+  - path: "requirements.txt"
+    type: "file"
+    template: true
+  - path: "app"
+    type: "directory"
+  - path: "app/__init__.py"
+    type: "file"
+  - path: "app/models.py"
+    type: "file"
+    template: true
+  - path: "app/schemas.py"
+    type: "file"
+    template: true
+  - path: "app/routers"
+    type: "directory"
+  - path: "app/routers/users.py"
+    type: "file"
+    template: true
+  - path: "tests"
+    type: "directory"
+  - path: "Dockerfile"
+    type: "file"
+    template: true
+scripts:
+  dev: "uvicorn main:app --reload"
+  test: "pytest"
+  docker-build: "docker build -t {{api_name}} ."
+metadata:
+  complexity: "advanced"
+  estimated_time: "1-2 hours"
+  category: "Backend Development"

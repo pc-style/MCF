@@ -1,0 +1,70 @@
+name: "Microservice with Docker"
+type: "microservice"
+version: "1.0.0"
+description: "Containerized microservice with health checks, logging, and monitoring"
+author: "MCF DevOps Team"
+license: "MIT"
+tags: ["microservice", "docker", "kubernetes", "monitoring", "go"]
+parameters:
+  - key: "service_name"
+    label: "Service Name"
+    type: "text"
+    description: "Name of your microservice"
+    required: true
+    placeholder: "user-service"
+  - key: "port"
+    label: "Service Port"
+    type: "text"
+    description: "Port number for the service"
+    default: "8080"
+    validation: "^[0-9]{4,5}$"
+  - key: "include_metrics"
+    label: "Prometheus Metrics"
+    type: "boolean"
+    description: "Include Prometheus metrics endpoint"
+    default: true
+  - key: "log_level"
+    label: "Default Log Level"
+    type: "select"
+    options: ["debug", "info", "warn", "error"]
+    default: "info"
+dependencies:
+  - "gorilla/mux"
+  - "prometheus/client_golang"
+  - "sirupsen/logrus"
+files:
+  - path: "main.go"
+    type: "file"
+    template: true
+  - path: "go.mod"
+    type: "file"
+    template: true
+  - path: "Dockerfile"
+    type: "file"
+    template: true
+  - path: "docker-compose.yml"
+    type: "file"
+    template: true
+  - path: "k8s"
+    type: "directory"
+  - path: "k8s/deployment.yaml"
+    type: "file"
+    template: true
+  - path: "k8s/service.yaml"
+    type: "file"
+    template: true
+  - path: "pkg"
+    type: "directory"
+  - path: "pkg/handlers"
+    type: "directory"
+  - path: "pkg/handlers/health.go"
+    type: "file"
+    template: true
+scripts:
+  build: "go build -o bin/{{service_name}} ."
+  test: "go test ./..."
+  docker-build: "docker build -t {{service_name}}:latest ."
+metadata:
+  complexity: "intermediate"
+  estimated_time: "45-60 minutes"
+  category: "DevOps & Infrastructure"
