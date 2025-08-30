@@ -1,0 +1,52 @@
+{
+  "name": "python-uv",
+  "description": "Python project with UV package manager and virtual environment",
+  "category": "backend",
+  "prerequisites": ["python", "uv"],
+  "variables": [
+    {
+      "name": "project_name",
+      "prompt": "What is your project name?",
+      "default": "my-python-app",
+      "validation": "^[a-zA-Z0-9-_]+$"
+    },
+    {
+      "name": "python_version",
+      "prompt": "Python version (e.g., 3.11, 3.12)?",
+      "default": "3.12"
+    },
+    {
+      "name": "framework",
+      "prompt": "Web framework? (fastapi/flask/django/none)",
+      "default": "fastapi",
+      "options": ["fastapi", "flask", "django", "none"]
+    }
+  ],
+  "steps": [
+    {
+      "type": "directory",
+      "path": "{{project_name}}"
+    },
+    {
+      "type": "command",
+      "description": "Navigate to project directory",
+      "command": "cd {{project_name}}"
+    },
+    {
+      "type": "command",
+      "description": "Initialize UV project",
+      "command": "uv init --python {{python_version}}"
+    },
+    {
+      "type": "command",
+      "description": "Create virtual environment",
+      "command": "uv venv"
+    }
+  ],
+  "postInstall": [
+    "echo '✅ Python UV project created successfully!'",
+    "echo '📁 Navigate to your project: cd {{project_name}}'",
+    "echo '🔧 Activate environment: source .venv/bin/activate'",
+    "echo '📦 Install dependencies: uv sync'"
+  ]
+}

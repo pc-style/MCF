@@ -1,0 +1,54 @@
+{
+  "name": "vite",
+  "description": "Vite + React/Vue + TypeScript modern frontend setup",
+  "category": "frontend",
+  "prerequisites": ["node", "git"],
+  "variables": [
+    {
+      "name": "project_name",
+      "prompt": "What is your project name?",
+      "default": "my-vite-app",
+      "validation": "^[a-zA-Z0-9-_]+$"
+    },
+    {
+      "name": "framework",
+      "prompt": "Framework? (react/vue/vanilla)",
+      "default": "react",
+      "options": ["react", "vue", "vanilla"]
+    },
+    {
+      "name": "typescript",
+      "prompt": "Use TypeScript? (yes/no)",
+      "default": "yes",
+      "options": ["yes", "no"]
+    },
+    {
+      "name": "css_framework",
+      "prompt": "CSS framework? (tailwind/none)",
+      "default": "tailwind",
+      "options": ["tailwind", "none"]
+    }
+  ],
+  "steps": [
+    {
+      "type": "command",
+      "description": "Create Vite project",
+      "command": "npm create vite@latest {{project_name}} -- --template {{framework}}"
+    },
+    {
+      "type": "command",
+      "description": "Navigate to project",
+      "command": "cd {{project_name}}"
+    },
+    {
+      "type": "command",
+      "description": "Install dependencies",
+      "command": "npm install"
+    }
+  ],
+  "postInstall": [
+    "echo '✅ Vite project created successfully!'",
+    "echo '📁 Navigate to your project: cd {{project_name}}'",
+    "echo '🚀 Start development server: npm run dev'"
+  ]
+}

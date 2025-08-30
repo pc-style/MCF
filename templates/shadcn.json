@@ -1,0 +1,58 @@
+{
+  "name": "shadcn",
+  "description": "Next.js + shadcn/ui + Tailwind CSS + TypeScript setup",
+  "category": "frontend",
+  "prerequisites": ["node", "git"],
+  "variables": [
+    {
+      "name": "project_name",
+      "prompt": "What is your project name?",
+      "default": "my-shadcn-app",
+      "validation": "^[a-zA-Z0-9-_]+$"
+    },
+    {
+      "name": "css_framework",
+      "prompt": "CSS framework preference? (tailwind/css)",
+      "default": "tailwind",
+      "options": ["tailwind", "css"]
+    },
+    {
+      "name": "typescript",
+      "prompt": "Use TypeScript? (yes/no)",
+      "default": "yes",
+      "options": ["yes", "no"]
+    }
+  ],
+  "steps": [
+    {
+      "type": "command",
+      "description": "Initialize Next.js project",
+      "command": "npx create-next-app@latest {{project_name}} --typescript --tailwind --eslint --app --src-dir --import-alias='@/*'"
+    },
+    {
+      "type": "command",
+      "description": "Navigate to project directory",
+      "command": "cd {{project_name}}"
+    },
+    {
+      "type": "command",
+      "description": "Initialize shadcn/ui",
+      "command": "npx shadcn-ui@latest init --defaults"
+    },
+    {
+      "type": "command",
+      "description": "Add common shadcn components",
+      "command": "npx shadcn-ui@latest add button card input label"
+    },
+    {
+      "type": "file",
+      "path": "{{project_name}}/.env.example",
+      "content": "# Environment variables\nNEXT_PUBLIC_APP_URL=http://localhost:3000\n# Add your environment variables here\n"
+    }
+  ],
+  "postInstall": [
+    "echo '✅ shadcn/ui project created successfully!'",
+    "echo '📁 Navigate to your project: cd {{project_name}}'",
+    "echo '🚀 Start development server: npm run dev'"
+  ]
+}

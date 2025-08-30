@@ -1,0 +1,82 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/context7_reminder.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/claude_command_suggestions.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/session_setup.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/auto_format.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/git_work_tracker.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/bash_safety.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/context_monitor.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_CONFIG_DIR/hooks/git_work_tracker.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "$CLAUDE_CONFIG_DIR/hooks/enhanced_statusline.sh",
+    "padding": 1
+  },
+  "outputStyle": "explanatory"
+}
