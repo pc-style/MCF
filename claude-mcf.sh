@@ -9,6 +9,7 @@ if [ ! -f "$INSTALL_DIR/.claude/settings.json" ]; then
     echo "Please run '$INSTALL_CMD'"
     exit 1
 fi
+mkdir -p "$INSTALL_DIR/.claude/bookmarks"
 
 #if first run, we need to authenticate
 if [ ! -f "$INSTALL_DIR/.claude/bookmarks/.first-run.txt" ]; then
