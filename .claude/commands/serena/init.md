@@ -28,7 +28,7 @@ mkdir -p .serena/memories
 cat >> .serena/project.yml << 'EOF'
 
 # MCF-Specific Enhancements
-description: "Multi Component Framework - Advanced Claude Code development automation with semantic analysis"
+description: "My Claude Flow - Advanced Claude Code development automation with semantic analysis"
 
 # Language-specific optimizations for MCF
 languages:

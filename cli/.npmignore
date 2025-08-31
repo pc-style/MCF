@@ -1,0 +1,28 @@
+# Development files
+node_modules/
+
+# Config files
+.npmignore
+
+# Package files
+package-lock.json
+
+# Documentation (keep README.md)
+*.md
+!README.md
+
+# Git
+.gitignore
+.git/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log

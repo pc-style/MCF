@@ -1,0 +1,191 @@
+---
+alwaysApply: true
+description: "CLI-specific development patterns and standards for MCF"
+---
+# CLI Development Patterns
+
+**MCF CLI follows specific patterns for command-line interface development**
+
+## Argument Parsing Pattern
+
+All CLI commands must use standardized argument parsing:
+
+```typescript
+// ✅ CORRECT: Standardized CLI argument handling
+export class RunCommand {
+  private parseArguments(args: string[]): CommandInput {
+    const result: CommandInput = {
+      debug: false,
+      profile: undefined,
+      passThroughArgs: []
+    };
+
+    // Find separator between MCF args and pass-through args
+    const separatorIndex = args.indexOf('--');
+    const mcfArgs = separatorIndex >= 0 ? args.slice(0, separatorIndex) : args;
+    const passThrough = separatorIndex >= 0 ? args.slice(separatorIndex + 1) : [];
+
+    // Parse MCF-specific flags
+    for (let i = 0; i < mcfArgs.length; i++) {
+      switch (mcfArgs[i]) {
+        case '-d':
+        case '--debug':
+          result.debug = true;
+          break;
+        case '-p':
+        case '--profile':
+          result.profile = mcfArgs[++i];
+          break;
+        default:
+          // Unknown MCF flag - could be pass-through
+          if (mcfArgs[i].startsWith('-')) {
+            console.warn(`Unknown MCF flag: ${mcfArgs[i]}`);
+          }
+      }
+    }
+
+    result.passThroughArgs = passThrough;
+    return result;
+  }
+}
+```
+
+## Process Management Pattern
+
+CLI commands that spawn child processes must follow these patterns:
+
+```typescript
+// ✅ CORRECT: Proper child process handling
+export class ClaudeService {
+  async runClaude(options: ClaudeRunOptions): Promise<ClaudeRunResult> {
+    const args = this.buildClaudeArguments(options);
+
+    return new Promise((resolve, reject) => {
+      const child = spawn('claude', args, {
+        stdio: 'inherit',
+        env: { ...process.env, ...options.environment },
+        // Handle Windows .cmd/.bat files
+        shell: process.platform === 'win32'
+      });
+
+      child.on('exit', (code) => {
+        resolve({
+          exitCode: code || 0,
+          executionTime: Date.now() - startTime
+        });
+      });
+
+      child.on('error', (error) => {
+        reject(
+          new ClaudeServiceError(`Failed to start Claude: ${error.message}`)
+        );
+      });
+    });
+  }
+}
+```
+
+## Configuration Management Pattern
+
+Configuration handling must be consistent:
+
+```typescript
+// ✅ CORRECT: Configuration service pattern
+export class ConfigurationService {
+  async saveProfile(name: string, profile: MCFProfile): Promise<void> {
+    const profilePath = path.join(
+      this.config.configDirectory,
+      'profiles',
+      `${name}.json`
+    );
+
+    await this.fileSystemService.ensureDirectory(path.dirname(profilePath));
+    await this.fileSystemService.writeJSON(profilePath, profile);
+
+    this.logger.info(`Profile '${name}' saved to ${profilePath}`);
+  }
+
+  async loadProfile(name: string): Promise<MCFProfile> {
+    const profilePath = path.join(
+      this.config.configDirectory,
+      'profiles',
+      `${name}.json`
+    );
+
+    if (!(await this.fileSystemService.exists(profilePath))) {
+      throw new ConfigurationServiceError(
+        `Profile '${name}' not found`,
+        'PROFILE_NOT_FOUND'
+      );
+    }
+
+    return await this.fileSystemService.readJSON<MCFProfile>(profilePath);
+  }
+}
+```
+
+## Error Handling Pattern
+
+Use specific error classes with detailed context:
+
+```typescript
+// ✅ CORRECT: Specific error classes
+export class CommandExecutionError extends Error {
+  constructor(
+    message: string,
+    public readonly command: string,
+    public readonly exitCode: number,
+    public readonly stderr?: string
+  ) {
+    super(message);
+    this.name = 'CommandExecutionError';
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly field: string,
+    public readonly value: any
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+```
+
+## Logging Pattern
+
+Use structured logging with appropriate levels:
+
+```typescript
+// ✅ CORRECT: Structured logging
+export class ExampleCommand {
+  async execute(): Promise<CommandOutput> {
+    this.logger.info('Starting command execution', {
+      command: 'example',
+      profile: this.input.profile,
+      debug: this.input.debug
+    });
+
+    try {
+      const result = await this.performOperation();
+
+      this.logger.info('Command completed successfully', {
+        executionTime: Date.now() - startTime,
+        resultCount: result.items?.length || 0
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error('Command execution failed', {
+        error: error.message,
+        command: 'example',
+        stack: error.stack
+      });
+
+      throw error;
+    }
+  }
+}
+```

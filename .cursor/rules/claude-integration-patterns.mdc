@@ -1,0 +1,273 @@
+---
+alwaysApply: true
+description: "Claude Code integration patterns and best practices for MCF"
+---
+# Claude Code Integration Patterns
+
+**MCF integrates deeply with Claude Code and follows specific patterns**
+
+## Claude Service Implementation
+
+Claude services must handle process lifecycle properly:
+
+```typescript
+// ✅ CORRECT: Claude service implementation
+export class ClaudeService extends BaseService implements IClaudeService {
+  async runClaude(options: ClaudeRunOptions): Promise<ClaudeRunResult> {
+    const args = this.buildClaudeArguments(options);
+
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+
+      this.logger.info('Starting Claude Code', {
+        args: args.join(' '),
+        workingDirectory: options.workingDirectory || process.cwd()
+      });
+
+      const child = spawn('claude', args, {
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          ...options.environment,
+          // Set Claude-specific environment variables
+          CLAUDE_CONFIG_DIR: options.configDirectory,
+          ANTHROPIC_BASE_URL: options.anthropicBaseUrl,
+          ANTHROPIC_AUTH_TOKEN: options.authToken
+        },
+        cwd: options.workingDirectory || process.cwd(),
+        shell: process.platform === 'win32'
+      });
+
+      // Handle process events
+      child.on('exit', (code, signal) => {
+        const executionTime = Date.now() - startTime;
+
+        this.logger.info('Claude Code exited', {
+          exitCode: code,
+          signal,
+          executionTime
+        });
+
+        resolve({
+          exitCode: code || 0,
+          executionTime,
+          signal
+        });
+      });
+
+      child.on('error', (error) => {
+        this.logger.error('Failed to start Claude Code', {
+          error: error.message,
+          command: 'claude',
+          args
+        });
+
+        reject(
+          new ClaudeServiceError(
+            `Failed to start Claude: ${error.message}`,
+            'CLAUDE_START_FAILED',
+            { originalError: error, args }
+          )
+        );
+      });
+
+      // Handle stdin/stdout if needed
+      if (options.interactive !== false) {
+        process.on('SIGINT', () => {
+          child.kill('SIGINT');
+        });
+
+        process.on('SIGTERM', () => {
+          child.kill('SIGTERM');
+        });
+      }
+    });
+  }
+
+  private buildClaudeArguments(options: ClaudeRunOptions): string[] {
+    const args: string[] = [];
+
+    // Add flags
+    if (options.dangerousSkip) {
+      args.push('--dangerously-skip-permissions');
+    }
+
+    if (options.debug) {
+      args.push('--debug');
+    }
+
+    // Add profile/project
+    if (options.project) {
+      args.push('--project', options.project);
+    }
+
+    // Add pass-through arguments
+    if (options.additionalArgs) {
+      args.push(...options.additionalArgs);
+    }
+
+    return args;
+  }
+}
+```
+
+## Environment Configuration
+
+Properly configure Claude Code environment:
+
+```typescript
+// ✅ CORRECT: Environment configuration
+export interface ClaudeEnvironment {
+  ANTHROPIC_BASE_URL?: string;
+  ANTHROPIC_AUTH_TOKEN?: string;
+  CLAUDE_CONFIG_DIR?: string;
+  ANTHROPIC_MODEL?: string;
+  ANTHROPIC_SMALL_FAST_MODEL?: string;
+}
+
+export class ClaudeEnvironmentService {
+  async configureEnvironment(profile: MCFProfile): Promise<ClaudeEnvironment> {
+    const env: ClaudeEnvironment = {};
+
+    // Base URL for Anthropic API
+    if (profile.claude?.anthropicBaseUrl) {
+      env.ANTHROPIC_BASE_URL = profile.claude.anthropicBaseUrl;
+    }
+
+    // Auth token
+    if (profile.claude?.authToken) {
+      env.ANTHROPIC_AUTH_TOKEN = profile.claude.authToken;
+    }
+
+    // Config directory
+    if (profile.claude?.configDirectory) {
+      env.CLAUDE_CONFIG_DIR = profile.claude.configDirectory;
+    }
+
+    // Model configuration
+    if (profile.claude?.model) {
+      env.ANTHROPIC_MODEL = profile.claude.model;
+    }
+
+    if (profile.claude?.smallFastModel) {
+      env.ANTHROPIC_SMALL_FAST_MODEL = profile.claude.smallFastModel;
+    }
+
+    return env;
+  }
+}
+```
+
+## Profile Management
+
+Handle Claude Code profiles properly:
+
+```typescript
+// ✅ CORRECT: Profile management
+export interface ClaudeProfile {
+  name: string;
+  model?: string;
+  smallFastModel?: string;
+  dangerousSkip?: boolean;
+  environment: Record<string, string>;
+  flags: string[];
+}
+
+export class ClaudeProfileService {
+  async loadProfile(name: string): Promise<ClaudeProfile> {
+    const profilePath = path.join(
+      this.config.configDirectory,
+      'profiles',
+      'claude',
+      `${name}.json`
+    );
+
+    if (!(await this.fileSystemService.exists(profilePath))) {
+      // Return default profile
+      return this.getDefaultProfile();
+    }
+
+    const profile = await this.fileSystemService.readJSON<ClaudeProfile>(profilePath);
+
+    // Validate profile
+    this.validateProfile(profile);
+
+    return profile;
+  }
+
+  private getDefaultProfile(): ClaudeProfile {
+    return {
+      name: 'default',
+      model: 'claude-3-5-sonnet-20241022',
+      smallFastModel: 'claude-3-5-haiku-20241022',
+      dangerousSkip: false,
+      environment: {},
+      flags: []
+    };
+  }
+
+  private validateProfile(profile: ClaudeProfile): void {
+    if (!profile.name) {
+      throw new ProfileValidationError('Profile name is required');
+    }
+
+    // Validate model names
+    const validModels = ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'];
+    if (profile.model && !validModels.includes(profile.model)) {
+      throw new ProfileValidationError(`Invalid model: ${profile.model}`);
+    }
+  }
+}
+```
+
+## Claude Code Directory Structure
+
+Follow Claude Code configuration conventions:
+
+```
+.claude/
+├── settings.json              # Core Claude Code settings
+├── settings.local.json        # Local project settings (gitignored)
+├── agents/                    # Custom AI agents
+│   ├── orchestrator.md       # Main orchestration agent
+│   ├── perf-optimizer.md     # Performance optimization
+│   └── semantic-navigator.md # Code navigation
+├── commands/                  # Slash commands
+│   ├── gh/                   # Git workflows
+│   ├── project/              # Project management
+│   ├── serena/               # Semantic analysis
+│   └── templates/            # Template system
+└── hooks/                     # Event-driven automation
+    ├── session_setup.py      # Session initialization
+    ├── context_monitor.py    # Context monitoring
+    └── git_suggestions.py    # Git suggestions
+```
+
+## Command Integration
+
+Integrate with Claude Code slash commands:
+
+```typescript
+// ✅ CORRECT: Slash command integration
+export class ClaudeCommandService {
+  async executeSlashCommand(command: string, args: string[]): Promise<CommandResult> {
+    const fullCommand = `/${command} ${args.join(' ')}`.trim();
+
+    this.logger.info('Executing Claude slash command', {
+      command: fullCommand
+    });
+
+    // Execute through Claude Code
+    const result = await this.claudeService.runClaude({
+      additionalArgs: [fullCommand],
+      workingDirectory: process.cwd()
+    });
+
+    return {
+      exitCode: result.exitCode,
+      output: result.output,
+      executionTime: result.executionTime
+    };
+  }
+}
+```

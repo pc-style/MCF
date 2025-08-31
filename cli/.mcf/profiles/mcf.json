@@ -1,0 +1,9 @@
+{
+  "id": "mcf",
+  "name": "My Claude Flow",
+  "config": {
+    "claude": {
+      "configDirectory": "/Users/pcstyle/MMMM/MCF/.claude"
+    }
+  }
+}

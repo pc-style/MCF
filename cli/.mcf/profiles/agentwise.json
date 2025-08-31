@@ -1,0 +1,9 @@
+{
+  "id": "agentwise",
+  "name": "Agentwise",
+  "config": {
+    "claude": {
+      "configDirectory": "/Users/pcstyle/agentwise/.claude"
+    }
+  }
+}

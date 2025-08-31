@@ -1,4 +1,4 @@
-# MCF - Multi Component Framework
+# MCF - My Claude Flow
 
 A sophisticated development automation platform built around Claude Code integration, featuring intelligent hooks, custom commands, comprehensive documentation, and **semantic code analysis via Serena integration**.
 
@@ -92,6 +92,19 @@ MCF/
 
 ## 🚀 Features
 
+### **🎨 ULTRA ENHANCED STATUSLINE (NEW!)**
+
+- **Dynamic Model Detection**: Color-coded AI model icons (🎭 Sonnet, 🎼 Opus, 🍃 Haiku, ⚡ Grok)
+- **Rich Git Integration**: Branch status with staged/modified/untracked counters + ahead/behind indicators
+- **MCP Connection Monitoring**: Real-time MCP server status with server names
+- **Cost Tracking**: Color-coded usage warnings (💵 <$1, 💰 $1-5, 💸 >$5) + token counts
+- **Session Analytics**: Duration tracking with "Marathon Mode" detection
+- **Project Intelligence**: File counts, project size, and smart mood indicators
+- **System Metrics**: CPU/RAM usage on ultra-wide terminals
+- **Time-Based Greetings**: Context-aware messages throughout the day
+- **Responsive Design**: Adapts to terminal width (80-180+ characters)
+- **Configuration System**: Fully customizable via `statusline.config`
+
 ### **🧠 Semantic Code Analysis (NEW!)**
 
 - **Serena Integration**: IDE-like semantic code understanding and navigation
@@ -133,6 +146,16 @@ MCF/
 - **Troubleshooting**: Common issues and solutions
 
 ## 🎯 Key Components
+
+### **🎨 Enhanced Statusline System** (`.claude/hooks/enhanced_statusline.sh`)
+
+- **Real-Time Metrics**: Dynamic updates with model, git, MCP, cost, and session data
+- **Color-Coded Intelligence**: Visual indicators for different states and thresholds
+- **Performance Monitoring**: CPU/RAM usage with smart caching
+- **Context Awareness**: Time-based greetings and mood detection
+- **Responsive Layout**: Adapts to terminal width for optimal viewing
+- **Configuration System**: Fully customizable via `statusline.config` file
+- **Test Framework**: Demo script to showcase all features
 
 ### **Serena Semantic Engine** (`.claude/commands/serena/` + `.serena/`)
 
@@ -213,28 +236,73 @@ MCF/
 
 ### **Start Using**
 
-6. **Try semantic code analysis**:
+6. **See the enhanced statusline in action**:
+   - The statusline automatically displays when you start Claude Code
+   - Watch it update dynamically as you work with rich colors and metrics
+   - Test different scenarios with: `.claude/hooks/test_statusline.sh`
+
+7. **Try semantic code analysis**:
 
    ```
    /serena:overview                    # See project structure
    /serena:find MyFunction             # Find specific symbols
    ```
 
-7. **Try workflow commands**:
+8. **Try workflow commands**:
 
    ```
    /gh:push                           # Git workflow
    ```
 
-8. **Get contextual suggestions**:
+9. **Get contextual suggestions**:
    - The hooks will automatically suggest relevant commands based on your work
 
-9. **Explore available commands**:
-   ```
-   /help
-   ```
+10. **Explore available commands**:
+    ```
+    /help
+    ```
 
 ## 📖 Usage Examples
+
+### **🎨 Enhanced Statusline Features**
+
+The enhanced statusline automatically displays when you start Claude Code and provides:
+
+```bash
+# Basic view (80+ chars terminal)
+🎭 claude-3.5-sonnet | 📁 MCF | 🌿 main | 🔥 3 MCP | 💵 $0.0234
+
+# Extended view (120+ chars terminal)
+🎭 claude-3.5-sonnet | 📁 MCF | 🌿 main●2✚1 | 🔥 3 MCP (serena,git,docs) | 💵 $0.0234 | 🌤️ Good Afternoon
+
+# Ultra view (150+ chars terminal)
+🎭 claude-3.5-sonnet | 📁 MCF | 🌿 main↑2↓1 | 🔥 3 MCP (serena,git,docs) | 💵 $0.0234 | 📊 245 files (1.2GB) | 🌤️ Good Afternoon
+
+# Maximum view (180+ chars terminal)
+🎭 claude-3.5-sonnet | 📁 MCF | 🌿 main↑2↓1 | 🔥 3 MCP (serena,git,docs) | 💵 $0.0234 | ⏱️ 2h 15m | 📊 245 files (1.2GB) | ⚡ CPU: 45% | 🧠 RAM: 8.2GB
+```
+
+**Statusline Components:**
+- **🎭/🎼/🍃/⚡**: AI model indicator with custom emoji per model
+- **📁**: Current project/directory name
+- **🌿**: Git branch with status indicators (● staged, ✚ modified, … untracked, ↑ ahead, ↓ behind)
+- **🔥**: MCP server count and names (green ≥3, yellow ≥1)
+- **💵/💰/💸**: Cost with color coding (<$1 green, $1-5 yellow, >$5 red)
+- **⏱️**: Session duration (shows after 1 minute)
+- **📊**: File count and project size (on wide terminals)
+- **⚡/🧠**: System CPU/RAM usage (on ultra-wide terminals)
+
+**Customization:**
+```bash
+# Edit the configuration file
+vim .claude/hooks/statusline.config
+
+# Test different scenarios
+./.claude/hooks/test_statusline.sh
+
+# See it in action with Claude Code
+claude --project .
+```
 
 ### **⭐ NEW: Semantic Code Analysis**
 
@@ -277,6 +345,7 @@ The system is configured through:
 
 - **`.claude/settings.json`**: Core Claude Code configuration with hooks and status line
 - **`.claude/settings.local.json`**: Local project-specific settings
+- **`.claude/hooks/statusline.config`**: Enhanced statusline customization options
 - **`~/.serena/serena_config.yml`**: Global Serena semantic analysis configuration
 - **`.serena/project.yml`**: Project-specific Serena settings
 - **Individual command files**: Each slash command is customizable
@@ -284,10 +353,18 @@ The system is configured through:
 
 ## 🌟 What Makes MCF Special
 
+### **🎨 Ultra-Rich Developer Experience**
+
+- **Enhanced Statusline**: Dynamic, colorful, intelligent status display with 10+ metrics
+- **Real-Time Insights**: Live cost tracking, system performance, and project analytics
+- **Context Awareness**: Time-based greetings, mood detection, and smart suggestions
+- **Responsive Design**: Adapts beautifully to any terminal width (80-180+ chars)
+- **Configuration System**: Fully customizable visual experience
+
 ### **Semantic Superpowers**
 
 - **10x Token Efficiency**: Work at symbol-level instead of reading entire files
-- **IDE-like Navigation**: Find, analyze, and modify code with surgical precision  
+- **IDE-like Navigation**: Find, analyze, and modify code with surgical precision
 - **Agent Enhancement**: All 9 agents get semantic code understanding
 - **Smart Suggestions**: Context-aware recommendations for semantic operations
 
