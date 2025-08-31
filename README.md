@@ -1,4 +1,4 @@
-# MCF - Multi Component Framework
+# MCF - My Claude Flow
 
 A sophisticated development automation platform built around Claude Code integration, featuring intelligent hooks, custom commands, comprehensive documentation, and **semantic code analysis via Serena integration**.
 

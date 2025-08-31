@@ -50,7 +50,7 @@ async function runTest(name, args, expectedInOutput) {
 
 async function runTests() {
   const tests = [
-    { name: 'Help command', args: ['--help'], expected: 'MCF (Multi Component Framework) CLI' },
+    { name: 'Help command', args: ['--help'], expected: 'MCF (My Claude Flow) CLI' },
     { name: 'Version command', args: ['--version'], expected: '1.0.0' },
     { name: 'Status command', args: ['status'], expected: '📊 MCF Status Check' },
     { name: 'Templates command', args: ['templates'], expected: '📚 MCF Templates' }

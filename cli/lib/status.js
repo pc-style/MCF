@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const chalk = require('chalk');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import chalk from 'chalk';
 
-module.exports = async function status() {
+export default async function status() {
   console.log(chalk.blue.bold('📊 MCF Status Check'));
   console.log();
   

@@ -1,0 +1,18 @@
+{
+  "id": "new",
+  "name": "new",
+  "description": "name",
+  "path": "/Users/pcstyle/MMMM/MCF/cli/new",
+  "environment": "development",
+  "createdAt": "2025-08-30T23:43:10.009Z",
+  "lastModified": "2025-08-30T23:43:10.009Z",
+  "config": {
+    "settings": {}
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "pcstyle",
+    "tags": [],
+    "custom": {}
+  }
+}

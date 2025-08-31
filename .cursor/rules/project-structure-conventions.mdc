@@ -1,0 +1,169 @@
+---
+alwaysApply: true
+description: "MCF project structure conventions and file organization standards"
+---
+# Project Structure Conventions
+
+**MCF follows a specific directory structure and file organization pattern**
+
+## Core CLI Structure
+
+```
+cli/
+├── bin/                           # CLI entry point
+│   └── mcf.js                    # Main CLI script (ES modules only)
+├── lib/                          # Core implementation
+│   ├── commands/                 # Command micro-blocks
+│   │   ├── install/              # Installation commands
+│   │   │   └── InstallCommand.ts
+│   │   ├── run/                  # Runtime commands
+│   │   │   └── RunCommand.ts
+│   │   ├── config/               # Configuration commands
+│   │   │   └── ConfigCommand.ts
+│   │   └── project/              # Project management commands
+│   │       └── ProjectCommand.ts
+│   ├── services/                 # Infrastructure services
+│   │   ├── interfaces/           # Service contracts
+│   │   │   ├── IClaudeService.ts
+│   │   │   ├── IConfigurationService.ts
+│   │   │   └── IFileSystemService.ts
+│   │   └── implementations/      # Service implementations
+│   │       ├── ClaudeService.ts
+│   │       ├── ConfigurationService.ts
+│   │       └── FileSystemService.ts
+│   └── core/                     # Registry and base classes
+│       ├── registry/             # Service and command registries
+│       │   ├── ServiceRegistry.ts
+│       │   └── CommandRegistry.ts
+│       ├── base/                 # Base command and service classes
+│       │   ├── BaseCommand.ts
+│       │   └── BaseService.ts
+│       └── contracts/            # Interfaces and type definitions
+│           ├── CommandMetadata.ts
+│           └── ServiceMetadata.ts
+└── types/                        # Shared type definitions
+    ├── MCFProfile.ts
+    └── ClaudeOptions.ts
+```
+
+## File Naming Conventions
+
+1. **Commands**: `{Verb}{Noun}Command` (e.g., `RunCommand`, `ConfigCommand`)
+2. **Services**: `{Purpose}Service` (e.g., `ClaudeService`, `ConfigurationService`)
+3. **Interfaces**: `I{ServiceName}` (e.g., `IClaudeService`, `IConfigurationService`)
+4. **Errors**: `{ComponentName}Error` (e.g., `RunCommandError`, `ClaudeServiceError`)
+5. **Types**: `{Purpose}{Input|Output|Config}` (e.g., `RunCommandInput`, `MCFProfile`)
+6. **Files**: PascalCase for classes, camelCase for types
+
+## Directory Organization Rules
+
+### Commands Directory (`lib/commands/`)
+
+- Each command gets its own subdirectory
+- All related files (command class, interfaces, errors) in one directory
+- Follow the micro-block pattern
+
+```typescript
+// lib/commands/install/InstallCommand.ts
+export class InstallCommand {
+  // Implementation
+}
+
+// lib/commands/install/types.ts
+export interface InstallCommandInput {
+  // Input contract
+}
+
+export interface InstallCommandOutput {
+  // Output contract
+}
+```
+
+### Services Directory (`lib/services/`)
+
+- Clear separation between interfaces and implementations
+- Interfaces in `interfaces/` subdirectory
+- Implementations in `implementations/` subdirectory
+
+```typescript
+// lib/services/interfaces/IConfigurationService.ts
+export interface IConfigurationService {
+  // Contract definition
+}
+
+// lib/services/implementations/ConfigurationService.ts
+export class ConfigurationService implements IConfigurationService {
+  // Implementation
+}
+```
+
+### Core Directory (`lib/core/`)
+
+- Registry classes for service/command management
+- Base classes for common functionality
+- Contract definitions and metadata
+
+## Configuration File Structure
+
+MCF uses multiple configuration layers:
+
+```
+.mcf/                          # Main MCF configuration
+├── config.json               # Core configuration
+├── profiles/                 # Profile configurations
+│   ├── default.json
+│   └── development.json
+└── logs/                     # Log files
+
+.claude/                       # Claude Code configuration
+├── settings.json            # Core Claude settings
+├── settings.local.json      # Local overrides
+├── agents/                  # AI agents
+├── commands/                # Slash commands
+└── hooks/                   # Event hooks
+```
+
+## Import Path Conventions
+
+Use relative imports with consistent patterns:
+
+```typescript
+// ✅ CORRECT: Consistent import paths
+import { ServiceRegistry } from '../../core/registry/ServiceRegistry.js';
+import { ILogger } from '../interfaces/ILogger.js';
+import { RunCommandInput } from './types.js';
+
+// Within same directory
+import { HelperFunction } from './helpers.js';
+
+// From parent directory
+import { BaseClass } from '../base/BaseClass.js';
+
+// From sibling directory
+import { Utils } from '../utils/Utils.js';
+```
+
+## File Extensions
+
+- **`.js`**: JavaScript implementation files (ES modules)
+- **`.ts`**: TypeScript definition and implementation files
+- **`.json`**: Configuration and data files
+- **`.md`**: Documentation files
+
+## Special Files
+
+- **`bin/mcf.js`**: CLI entry point (must be executable)
+- **`package.json`**: NPM package configuration
+- **`README.md`**: Project documentation
+- **`index.js`**: Main library export (if applicable)
+
+## Template Structure
+
+Templates follow a specific structure:
+
+```
+templates/
+├── python-uv.json           # Template configuration
+├── shadcn.json             # Template configuration
+└── vite.json              # Template configuration
+```

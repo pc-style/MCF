@@ -1,0 +1,9 @@
+{
+  "id": "proxy",
+  "name": "Copilot Proxy",
+  "config": {
+    "claude": {
+      "configDirectory": "/Users/pcstyle/.claude-proxy"
+    }
+  }
+}

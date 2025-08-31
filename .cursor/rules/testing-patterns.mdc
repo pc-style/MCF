@@ -1,0 +1,330 @@
+---
+alwaysApply: true
+description: "Testing patterns and standards for MCF CLI components"
+---
+# Testing Patterns and Standards
+
+**MCF CLI follows specific testing patterns for commands and services**
+
+## Command Testing Pattern
+
+Test commands using contract-based testing:
+
+```typescript
+describe('RunCommand', () => {
+  let mockClaudeService: jest.Mocked<IClaudeService>;
+  let mockConfigService: jest.Mocked<IConfigurationService>;
+  let mockLogger: jest.Mocked<ILogger>;
+
+  beforeEach(() => {
+    mockClaudeService = {
+      runClaude: jest.fn()
+    } as jest.Mocked<IClaudeService>;
+
+    mockConfigService = {
+      loadProfile: jest.fn()
+    } as jest.Mocked<IConfigurationService>;
+
+    mockLogger = {
+      info: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn()
+    } as jest.Mocked<ILogger>;
+  });
+
+  it('should parse dangerous skip flag correctly', async () => {
+    const command = new RunCommand(
+      { dangerousSkip: true, continue: false },
+      mockLogger,
+      {
+        IClaudeService: mockClaudeService,
+        IConfigurationService: mockConfigService
+      }
+    );
+
+    await command.execute();
+
+    expect(mockClaudeService.runClaude).toHaveBeenCalledWith(
+      expect.objectContaining({ dangerousSkip: true })
+    );
+  });
+
+  it('should handle pass-through arguments', async () => {
+    const command = new RunCommand(
+      { passThroughArgs: ['--debug', '--verbose'] },
+      mockLogger,
+      {
+        IClaudeService: mockClaudeService,
+        IConfigurationService: mockConfigService
+      }
+    );
+
+    await command.execute();
+
+    expect(mockClaudeService.runClaude).toHaveBeenCalledWith(
+      expect.objectContaining({
+        additionalArgs: ['--debug', '--verbose']
+      })
+    );
+  });
+
+  it('should validate input contracts', () => {
+    const command = new RunCommand(
+      { dangerousSkip: true }, // Missing required services
+      mockLogger,
+      {} // Empty services
+    );
+
+    expect(() => command.validate()).toThrow(RunCommandError);
+    expect(() => command.validate()).toThrow('Configuration service required');
+  });
+
+  it('should handle execution errors gracefully', async () => {
+    mockClaudeService.runClaude.mockRejectedValue(
+      new Error('Claude execution failed')
+    );
+
+    const command = new RunCommand(
+      { dangerousSkip: false },
+      mockLogger,
+      {
+        IClaudeService: mockClaudeService,
+        IConfigurationService: mockConfigService
+      }
+    );
+
+    await expect(command.execute()).rejects.toThrow(RunCommandError);
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      'Command execution failed',
+      expect.any(Object)
+    );
+  });
+});
+```
+
+## Service Testing Pattern
+
+Test services for contract compliance and portability:
+
+```typescript
+describe('ConfigurationService', () => {
+  let mockLogger: jest.Mocked<ILogger>;
+  let mockFileSystemService: jest.Mocked<IFileSystemService>;
+
+  beforeEach(() => {
+    mockLogger = {
+      info: jest.fn(),
+      error: jest.fn()
+    } as jest.Mocked<ILogger>;
+
+    mockFileSystemService = {
+      ensureDirectory: jest.fn(),
+      writeJSON: jest.fn(),
+      readJSON: jest.fn(),
+      exists: jest.fn()
+    } as jest.Mocked<IFileSystemService>;
+  });
+
+  it('should implement IConfigurationService contract', () => {
+    const config: ConfigurationServiceConfig = {
+      configDirectory: '/tmp/mcf-test',
+      defaultProfile: 'default',
+      validateProfiles: true
+    };
+
+    const service = new ConfigurationService(
+      config,
+      mockLogger,
+      mockFileSystemService
+    );
+
+    // Test that service implements the interface
+    expect(service).toImplementInterface('IConfigurationService');
+  });
+
+  it('should save and load profiles correctly', async () => {
+    const config: ConfigurationServiceConfig = {
+      configDirectory: '/tmp/mcf-test',
+      defaultProfile: 'default',
+      validateProfiles: true
+    };
+
+    const service = new ConfigurationService(
+      config,
+      mockLogger,
+      mockFileSystemService
+    );
+
+    const profile: MCFProfile = {
+      name: 'test',
+      claude: {
+        flags: ['-d'],
+        environment: { DEBUG: 'true' }
+      },
+      mcp: {
+        servers: ['serena']
+      }
+    };
+
+    // Mock file system calls
+    mockFileSystemService.ensureDirectory.mockResolvedValue(undefined);
+    mockFileSystemService.writeJSON.mockResolvedValue(undefined);
+    mockFileSystemService.exists.mockResolvedValue(true);
+    mockFileSystemService.readJSON.mockResolvedValue(profile);
+
+    // Test save
+    await service.saveProfile('test', profile);
+    expect(mockFileSystemService.writeJSON).toHaveBeenCalledWith(
+      '/tmp/mcf-test/profiles/test.json',
+      profile
+    );
+
+    // Test load
+    const loaded = await service.loadProfile('test');
+    expect(loaded).toEqual(profile);
+  });
+
+  it('should handle missing profiles gracefully', async () => {
+    const config: ConfigurationServiceConfig = {
+      configDirectory: '/tmp/mcf-test',
+      defaultProfile: 'default',
+      validateProfiles: true
+    };
+
+    const service = new ConfigurationService(
+      config,
+      mockLogger,
+      mockFileSystemService
+    );
+
+    mockFileSystemService.exists.mockResolvedValue(false);
+
+    await expect(service.loadProfile('nonexistent')).rejects.toThrow(
+      ConfigurationServiceError
+    );
+  });
+});
+```
+
+## Interface Compliance Testing
+
+Test that implementations comply with their interfaces:
+
+```typescript
+// Custom Jest matcher for interface compliance
+expect.extend({
+  toImplementInterface(received: any, interfaceName: string) {
+    const interfaces = {
+      'IConfigurationService': ['saveProfile', 'loadProfile', 'listProfiles'],
+      'IClaudeService': ['runClaude', 'getVersion'],
+      'ILogger': ['info', 'error', 'warn', 'debug']
+    };
+
+    const requiredMethods = interfaces[interfaceName];
+    if (!requiredMethods) {
+      throw new Error(`Unknown interface: ${interfaceName}`);
+    }
+
+    const missingMethods = requiredMethods.filter(
+      method => typeof received[method] !== 'function'
+    );
+
+    if (missingMethods.length > 0) {
+      return {
+        message: () => `Missing methods: ${missingMethods.join(', ')}`,
+        pass: false
+      };
+    }
+
+    return {
+      message: () => `Implements ${interfaceName} interface`,
+      pass: true
+    };
+  }
+});
+```
+
+## Test File Organization
+
+Follow consistent test file structure:
+
+```
+cli/
+├── lib/
+│   ├── commands/
+│   │   ├── install/
+│   │   │   ├── InstallCommand.ts
+│   │   │   └── InstallCommand.test.ts     # Unit tests
+│   │   └── run/
+│   │       ├── RunCommand.ts
+│   │       └── RunCommand.test.ts
+│   └── services/
+│       ├── implementations/
+│       │   ├── ConfigurationService.ts
+│       │   └── ConfigurationService.test.ts
+│       └── interfaces/
+│           └── IConfigurationService.test.ts  # Interface compliance tests
+└── test/
+    ├── integration/                        # Integration tests
+    ├── e2e/                               # End-to-end tests
+    └── utils/                             # Test utilities and mocks
+```
+
+## Test Configuration
+
+Use consistent test configuration:
+
+```javascript
+// jest.config.js
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/cli/lib'],
+  testMatch: ['**/*.test.ts'],
+  collectCoverageFrom: [
+    'lib/**/*.ts',
+    '!lib/**/*.test.ts',
+    '!lib/**/index.ts'
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts']
+};
+```
+
+## Mock Creation Helpers
+
+Create reusable mock factories:
+
+```typescript
+// test/utils/mocks.ts
+export function createMockClaudeService(): jest.Mocked<IClaudeService> {
+  return {
+    runClaude: jest.fn(),
+    getVersion: jest.fn()
+  };
+}
+
+export function createMockConfigurationService(): jest.Mocked<IConfigurationService> {
+  return {
+    saveProfile: jest.fn(),
+    loadProfile: jest.fn(),
+    listProfiles: jest.fn()
+  };
+}
+
+export function createMockLogger(): jest.Mocked<ILogger> {
+  return {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn()
+  };
+}
+```

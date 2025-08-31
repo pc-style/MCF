@@ -1,0 +1,398 @@
+---
+alwaysApply: true
+description: "Semantic code analysis patterns using Serena integration"
+---
+# Semantic Analysis Patterns
+
+**MCF integrates Serena for IDE-like semantic code understanding and navigation**
+
+## Serena Service Implementation
+
+Implement semantic analysis services using Serena:
+
+```typescript
+// ✅ CORRECT: Serena service integration
+export class SerenaService extends BaseService implements ISerenaService {
+  constructor(
+    private config: SerenaServiceConfig,
+    private logger: ILogger,
+    private httpClient: IHttpClient
+  ) {
+    super();
+  }
+
+  async findSymbol(namePath: string, options: FindSymbolOptions = {}): Promise<SymbolInfo[]> {
+    try {
+      this.logger.info('Finding symbol', { namePath, options });
+
+      const response = await this.httpClient.post('/api/symbols/find', {
+        name_path: namePath,
+        depth: options.depth || 0,
+        relative_path: options.relativePath,
+        include_body: options.includeBody || false,
+        include_kinds: options.includeKinds,
+        exclude_kinds: options.excludeKinds,
+        substring_matching: options.substringMatching || false,
+        max_answer_chars: options.maxAnswerChars
+      });
+
+      return response.data.symbols.map(this.mapSymbolResponse);
+    } catch (error) {
+      this.logger.error('Symbol search failed', {
+        namePath,
+        error: error.message
+      });
+
+      throw new SerenaServiceError(
+        `Failed to find symbol: ${error.message}`,
+        'SYMBOL_SEARCH_FAILED',
+        { namePath, originalError: error }
+      );
+    }
+  }
+
+  async getSymbolInfo(namePath: string, relativePath: string): Promise<DetailedSymbolInfo> {
+    try {
+      const response = await this.httpClient.post('/api/symbols/info', {
+        name_path: namePath,
+        relative_path: relativePath
+      });
+
+      return this.mapDetailedSymbolResponse(response.data);
+    } catch (error) {
+      throw new SerenaServiceError(
+        `Failed to get symbol info: ${error.message}`,
+        'SYMBOL_INFO_FAILED',
+        { namePath, relativePath }
+      );
+    }
+  }
+
+  async findReferences(namePath: string, relativePath: string): Promise<ReferenceInfo[]> {
+    try {
+      const response = await this.httpClient.post('/api/symbols/references', {
+        name_path: namePath,
+        relative_path: relativePath
+      });
+
+      return response.data.references.map(this.mapReferenceResponse);
+    } catch (error) {
+      throw new SerenaServiceError(
+        `Failed to find references: ${error.message}`,
+        'REFERENCES_SEARCH_FAILED',
+        { namePath, relativePath }
+      );
+    }
+  }
+
+  private mapSymbolResponse(response: any): SymbolInfo {
+    return {
+      name: response.name,
+      namePath: response.name_path,
+      kind: this.mapSymbolKind(response.kind),
+      location: {
+        file: response.location.file,
+        line: response.location.line,
+        column: response.location.column
+      },
+      containerName: response.container_name,
+      documentation: response.documentation
+    };
+  }
+}
+```
+
+## Symbol Search Patterns
+
+Use semantic search for code navigation:
+
+```typescript
+// ✅ CORRECT: Semantic symbol search
+export class CodeNavigationService {
+  async findUserService(): Promise<SymbolInfo[]> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Find UserService class
+    const symbols = await serenaService.findSymbol('UserService', {
+      includeKinds: [5], // Class symbol kind
+      substringMatching: false
+    });
+
+    return symbols;
+  }
+
+  async findAuthenticationMethods(): Promise<SymbolInfo[]> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Find authenticate method across all classes
+    const symbols = await serenaService.findSymbol('authenticate', {
+      includeKinds: [6], // Method symbol kind
+      substringMatching: true
+    });
+
+    return symbols;
+  }
+
+  async getUserServiceDetails(): Promise<DetailedSymbolInfo> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Get detailed information about UserService.authenticate
+    const symbolInfo = await serenaService.getSymbolInfo(
+      'UserService.authenticate',
+      'src/services/UserService.ts'
+    );
+
+    return symbolInfo;
+  }
+}
+```
+
+## Reference Analysis Patterns
+
+Analyze code dependencies and usage:
+
+```typescript
+// ✅ CORRECT: Reference analysis
+export class DependencyAnalysisService {
+  async analyzeUserServiceUsage(): Promise<ImpactAnalysis> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Find all references to UserService
+    const references = await serenaService.findReferences(
+      'UserService',
+      'src/services/UserService.ts'
+    );
+
+    // Analyze impact of changes
+    const impact = this.analyzeImpact(references);
+
+    return {
+      symbol: 'UserService',
+      totalReferences: references.length,
+      filesAffected: this.getUniqueFiles(references),
+      impactLevel: impact.level,
+      breakingChanges: impact.breaking,
+      suggestions: impact.suggestions
+    };
+  }
+
+  async traceDataFlow(methodName: string): Promise<DataFlowGraph> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Find method definition
+    const methodSymbols = await serenaService.findSymbol(methodName, {
+      includeKinds: [6] // Method
+    });
+
+    if (methodSymbols.length === 0) {
+      throw new AnalysisError(`Method ${methodName} not found`);
+    }
+
+    // Trace data flow through the method
+    const dataFlow = await this.traceMethodDataFlow(methodSymbols[0]);
+
+    return dataFlow;
+  }
+
+  private analyzeImpact(references: ReferenceInfo[]): ImpactAnalysisResult {
+    const breakingChanges = references.filter(ref =>
+      this.isBreakingChange(ref)
+    );
+
+    let impactLevel: 'low' | 'medium' | 'high' = 'low';
+
+    if (breakingChanges.length > 10) {
+      impactLevel = 'high';
+    } else if (breakingChanges.length > 3) {
+      impactLevel = 'medium';
+    }
+
+    return {
+      level: impactLevel,
+      breaking: breakingChanges.length,
+      suggestions: this.generateSuggestions(references)
+    };
+  }
+}
+```
+
+## Project Structure Analysis
+
+Use semantic analysis for architecture insights:
+
+```typescript
+// ✅ CORRECT: Project structure analysis
+export class ArchitectureAnalysisService {
+  async analyzeProjectStructure(): Promise<ProjectStructure> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Get all classes and interfaces
+    const classes = await serenaService.findSymbol('', {
+      includeKinds: [5, 11] // Class and Interface
+    });
+
+    // Get all functions and methods
+    const functions = await serenaService.findSymbol('', {
+      includeKinds: [6, 12] // Method and Function
+    });
+
+    // Analyze dependencies
+    const dependencies = await this.analyzeDependencies(classes);
+
+    return {
+      classes: classes.length,
+      interfaces: classes.filter(c => c.kind === 'interface').length,
+      functions: functions.length,
+      modules: this.groupByModule(classes),
+      dependencies,
+      circularDependencies: this.detectCircularDependencies(dependencies),
+      architecturePatterns: this.identifyPatterns(classes, dependencies)
+    };
+  }
+
+  async generateArchitectureDiagram(): Promise<string> {
+    const structure = await this.analyzeProjectStructure();
+
+    // Generate PlantUML or Mermaid diagram
+    return this.generateDiagram(structure);
+  }
+
+  private async analyzeDependencies(symbols: SymbolInfo[]): Promise<DependencyMap> {
+    const dependencies: DependencyMap = {};
+
+    for (const symbol of symbols) {
+      const refs = await ServiceRegistry.getInstance()
+        .get<ISerenaService>('ISerenaService')
+        .findReferences(symbol.namePath, symbol.location.file);
+
+      dependencies[symbol.namePath] = refs.map(ref => ({
+        symbol: ref.symbol,
+        type: this.classifyDependency(ref)
+      }));
+    }
+
+    return dependencies;
+  }
+}
+```
+
+## Semantic Code Modification
+
+Use precise symbol-level editing:
+
+```typescript
+// ✅ CORRECT: Symbol-level code modification
+export class CodeModificationService {
+  async addMethodToClass(
+    className: string,
+    methodName: string,
+    methodBody: string
+  ): Promise<ModificationResult> {
+    const serenaService = ServiceRegistry.getInstance().get<ISerenaService>(
+      'ISerenaService'
+    );
+
+    // Find the class
+    const classes = await serenaService.findSymbol(className, {
+      includeKinds: [5] // Class
+    });
+
+    if (classes.length === 0) {
+      throw new ModificationError(`Class ${className} not found`);
+    }
+
+    // Get class details to find insertion point
+    const classInfo = await serenaService.getSymbolInfo(
+      classes[0].namePath,
+      classes[0].location.file
+    );
+
+    // Find the end of the class
+    const insertionPoint = this.findClassEnd(classInfo);
+
+    // Insert the method
+    await this.insertCodeAtLocation(
+      classes[0].location.file,
+      insertionPoint,
+      `\n\n  ${methodBody}\n`
+    );
+
+    return {
+      success: true,
+      modifiedFiles: [classes[0].location.file],
+      insertedLines: methodBody.split('\n').length
+    };
+  }
+
+  async renameSymbol(
+    oldNamePath: string,
+    newNamePath: string,
+    relativePath: string
+  ): Promise<ModificationResult> {
+    // Find all references
+    const references = await ServiceRegistry.getInstance()
+      .get<ISerenaService>('ISerenaService')
+      .findReferences(oldNamePath, relativePath);
+
+    // Rename the symbol definition
+    await this.renameSymbolDefinition(oldNamePath, newNamePath, relativePath);
+
+    // Update all references
+    for (const ref of references) {
+      await this.updateReference(ref, newNamePath);
+    }
+
+    return {
+      success: true,
+      modifiedFiles: [relativePath, ...references.map(r => r.location.file)],
+      totalChanges: references.length + 1
+    };
+  }
+}
+```
+
+## Serena Configuration
+
+Configure Serena integration properly:
+
+```typescript
+// .serena/project.yml
+project:
+  name: "MCF CLI"
+  version: "1.0.0"
+  language: "typescript"
+  root_path: "."
+
+analysis:
+  include_patterns:
+    - "cli/lib/**/*.ts"
+    - "cli/lib/**/*.js"
+  exclude_patterns:
+    - "**/*.test.ts"
+    - "**/*.test.js"
+    - "**/node_modules/**"
+
+integrations:
+  - name: "claude_code"
+    enabled: true
+    config:
+      base_url: "http://localhost:4141"
+      model: "claude-3.5-sonnet"
+
+memory:
+  enabled: true
+  persist_location: ".serena/memories"
+  max_context_length: 10000
+```

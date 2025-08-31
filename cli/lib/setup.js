@@ -1,11 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-const ora = require('ora');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import chalk from 'chalk';
+import inquirer from 'inquirer';
+import ora from 'ora';
 
-module.exports = async function setup() {
+export default async function setup() {
   console.log(chalk.blue.bold('🔧 MCF Setup & Configuration'));
   console.log();
   

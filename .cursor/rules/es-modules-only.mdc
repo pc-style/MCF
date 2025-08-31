@@ -1,0 +1,59 @@
+---
+alwaysApply: true
+description: "ES Modules are mandatory in MCF CLI - never use CommonJS"
+---
+# ES Modules Only
+
+**🚨 CRITICAL RULE: ES Modules are mandatory in MCF CLI**
+
+MCF CLI uses ES Modules exclusively. **NEVER use CommonJS syntax**:
+
+## ❌ FORBIDDEN (CommonJS)
+- `require()` statements
+- `module.exports` or `exports`
+- `const pkg = require('chalk')`
+
+## ✅ REQUIRED (ES Modules)
+- `import` statements
+- `export` and `export default`
+- `import pkg from 'chalk'`
+
+## Why ES Modules are mandatory:
+
+- Modern JavaScript standard (not legacy CommonJS)
+- Better tree-shaking and dead code elimination
+- Static analysis for bundlers and tools
+- Top-level await support
+- Improved TypeScript integration
+- Future-proof architecture
+
+## Import Examples
+
+```javascript
+// ✅ CORRECT: ES Module imports
+import { program } from 'commander';
+import chalk from 'chalk';
+import pkg from '../package.json' with { type: 'json' };
+
+// ❌ WRONG: CommonJS requires (FORBIDDEN)
+const { program } = require('commander');
+const chalk = require('chalk');
+const pkg = require('../package.json');
+```
+
+## Export Examples
+
+```javascript
+// ✅ CORRECT: ES Module exports
+export class RunCommand {
+  // implementation
+}
+
+export default class InstallCommand {
+  // implementation
+}
+
+// ❌ WRONG: CommonJS exports (FORBIDDEN)
+module.exports = { RunCommand };
+module.exports = InstallCommand;
+```

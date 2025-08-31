@@ -95,5 +95,5 @@
     "command": "$CLAUDE_CONFIG_DIR/hooks/enhanced_statusline.sh",
     "padding": 1
   },
-  "outputStyle": "explanatory"
+  "outputStyle": "concise"
 }

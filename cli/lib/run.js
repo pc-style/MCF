@@ -1,11 +1,11 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const chalk = require('chalk');
-const ora = require('ora');
+import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import chalk from 'chalk';
+import ora from 'ora';
 
-module.exports = async function run() {
+export default async function run() {
   console.log(chalk.blue.bold('🚀 Starting MCF Session'));
   console.log();
   

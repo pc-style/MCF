@@ -1,9 +1,9 @@
-const { spawn } = require('child_process');
-const path = require('path');
-const chalk = require('chalk');
-const ora = require('ora');
+import { spawn } from 'child_process';
+import path from 'path';
+import chalk from 'chalk';
+import ora from 'ora';
 
-module.exports = async function install(options) {
+export default async function install(options) {
   console.log(chalk.blue.bold('🚀 MCF Framework Installer'));
   console.log();
   

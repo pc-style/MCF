@@ -2,6 +2,7 @@
 name: perf-optimizer
 description: Performance analysis specialist with semantic code understanding via Serena. Use proactively for performance bottleneck detection and optimization.
 tools: mcp__serena__find_symbol, mcp__serena__get_symbol_info, mcp__serena__find_referencing_symbols, mcp__serena__get_project_structure, Read, Bash, Grep
+model: haiku
 ---
 
 You are a performance optimization specialist with semantic code understanding through Serena.

@@ -1,0 +1,257 @@
+---
+alwaysApply: true
+description: "Quick reference guide for MCF development patterns and standards"
+---
+# MCF Development Quick Reference
+
+**Essential patterns and standards for MCF CLI development**
+
+## 🚨 Critical Rules (Always Follow)
+
+### ES Modules Only
+```javascript
+// ✅ CORRECT
+import { program } from 'commander';
+import chalk from 'chalk';
+import pkg from '../package.json' with { type: 'json' };
+
+// ❌ WRONG (FORBIDDEN)
+const { program } = require('commander');
+const chalk = require('chalk');
+const pkg = require('../package.json');
+```
+
+### Node.js Compatibility
+```javascript
+// ✅ CORRECT: Modern import assertions (Node.js 16.14.0+)
+import pkg from '../package.json' with { type: 'json' };
+
+// ❌ WRONG: Legacy assert syntax
+import pkg from '../package.json' assert { type: 'json' };
+```
+
+### Service Registry Usage
+```typescript
+// ✅ CORRECT: Always use registry
+const serviceRegistry = ServiceRegistry.getInstance();
+const configService = serviceRegistry.get<IConfigurationService>(
+  'IConfigurationService'
+);
+
+// ❌ WRONG: Direct instantiation
+const configService = new ConfigurationService(config, logger);
+```
+
+## 📋 Command Development Pattern
+
+```typescript
+// 1. Define contracts first
+interface CommandInput {
+  profile?: string;
+  debug?: boolean;
+}
+
+interface CommandOutput {
+  exitCode: number;
+  result: any;
+}
+
+// 2. Create error class
+class CommandError extends Error {
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'CommandError';
+    this.code = code;
+  }
+}
+
+// 3. Implement command
+export class ExampleCommand {
+  static readonly metadata = {
+    name: 'ExampleCommand',
+    dependencies: {
+      services: ['IConfigurationService'],
+      commands: [],
+      external: []
+    }
+  };
+
+  constructor(
+    private input: CommandInput,
+    private logger: ILogger,
+    private services: Record<string, any>
+  ) {}
+
+  async execute(): Promise<CommandOutput> {
+    // Implementation
+    return { exitCode: 0, result: {} };
+  }
+}
+```
+
+## 🔧 Service Development Pattern
+
+```typescript
+// 1. Define service-specific config
+export interface ServiceConfig {
+  configDirectory: string;
+  defaultProfile: string;
+}
+
+// 2. Implement service
+export class ExampleService extends BaseService {
+  constructor(
+    private config: ServiceConfig,  // Own config
+    private logger: ILogger,
+    private fileSystemService?: IFileSystemService
+  ) {
+    super();
+  }
+
+  // Service methods...
+}
+```
+
+## 🧪 Testing Pattern
+
+```typescript
+describe('ExampleCommand', () => {
+  let mockService: jest.Mocked<IService>;
+  let mockLogger: jest.Mocked<ILogger>;
+
+  beforeEach(() => {
+    mockService = { method: jest.fn() } as jest.Mocked<IService>;
+    mockLogger = {
+      info: jest.fn(),
+      error: jest.fn()
+    } as jest.Mocked<ILogger>;
+  });
+
+  it('should execute successfully', async () => {
+    const command = new ExampleCommand(
+      { input: 'test' },
+      mockLogger,
+      { IService: mockService }
+    );
+
+    const result = await command.execute();
+    expect(result.exitCode).toBe(0);
+  });
+});
+```
+
+## 📁 Project Structure
+
+```
+cli/
+├── bin/mcf.js                    # Entry point
+├── lib/
+│   ├── commands/                # Command micro-blocks
+│   │   ├── install/InstallCommand.ts
+│   │   ├── run/RunCommand.ts
+│   │   └── config/ConfigCommand.ts
+│   ├── services/                # Infrastructure services
+│   │   ├── interfaces/IClaudeService.ts
+│   │   └── implementations/ClaudeService.ts
+│   └── core/                    # Registry & base classes
+│       ├── registry/ServiceRegistry.ts
+│       ├── base/BaseCommand.ts
+│       └── contracts/CommandMetadata.ts
+└── types/MCFProfile.ts          # Shared types
+```
+
+## 🏷️ Naming Conventions
+
+- **Commands**: `RunCommand`, `ConfigCommand`
+- **Services**: `ClaudeService`, `ConfigurationService`
+- **Interfaces**: `IClaudeService`, `IConfigurationService`
+- **Errors**: `RunCommandError`, `ClaudeServiceError`
+- **Types**: `RunCommandInput`, `MCFProfile`
+
+## 🔍 Semantic Analysis with Serena
+
+```typescript
+// Find symbols
+const symbols = await serenaService.findSymbol('UserService', {
+  includeKinds: [5] // Class
+});
+
+// Get symbol details
+const details = await serenaService.getSymbolInfo(
+  'UserService.authenticate',
+  'src/services/UserService.ts'
+);
+
+// Find references
+const references = await serenaService.findReferences(
+  'UserService',
+  'src/services/UserService.ts'
+);
+```
+
+## ⚙️ Configuration Patterns
+
+```typescript
+// Profile management
+export interface MCFProfile {
+  name: string;
+  claude: {
+    flags: string[];
+    environment: Record<string, string>;
+  };
+  mcp: {
+    servers: string[];
+  };
+}
+
+// Environment configuration
+const env = {
+  ANTHROPIC_BASE_URL: profile.claude.anthropicBaseUrl,
+  ANTHROPIC_AUTH_TOKEN: profile.claude.authToken,
+  CLAUDE_CONFIG_DIR: profile.claude.configDirectory
+};
+```
+
+## 🚀 Deployment Checklist
+
+- [ ] ES Modules only (no CommonJS)
+- [ ] Modern import assertions for JSON
+- [ ] Service registry integration
+- [ ] Contract-first development
+- [ ] Comprehensive error handling
+- [ ] Unit tests with mocks
+- [ ] TypeScript interfaces defined
+- [ ] Naming conventions followed
+- [ ] Cross-platform compatibility
+- [ ] Documentation updated
+
+## 🔗 Key Integration Points
+
+### Claude Code Integration
+- Use `ClaudeService` for process management
+- Handle environment variables properly
+- Support pass-through arguments
+- Manage profiles and configurations
+
+### Serena Semantic Analysis
+- Use `SerenaService` for code intelligence
+- Leverage symbol search and navigation
+- Implement reference tracking
+- Support code modification operations
+
+### MCP Server Integration
+- Configure server lifecycle
+- Handle server discovery
+- Support multiple MCP servers
+- Error handling and recovery
+
+## 📚 Additional Resources
+
+- [Architecture Specification](docs/architecture.md)
+- [Development Standards](docs/standards.md)
+- [CLI Guide](CLI_GUIDE.md)
+- [Project README](README.md)
+
+---
+
+**Remember**: MCF CLI uses ES Modules exclusively. Never use `require()` or `module.exports`. Always use `import`/`export` and the service registry pattern.

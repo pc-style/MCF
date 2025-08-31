@@ -1,0 +1,151 @@
+---
+alwaysApply: true
+description: "MCF CLI follows micro-block architecture pattern for commands and services"
+---
+# Micro-Block Architecture Pattern
+
+**MCF CLI implements a micro-block architecture adapted for CLI applications**
+
+Each command is a self-contained micro-block with explicit contracts and dependencies.
+
+## Command Structure Pattern
+
+Every CLI command must follow this micro-block pattern:
+
+```typescript
+// 1. Input Contract (Interface)
+interface CommandInput {
+  profile?: string;
+  debug?: boolean;
+  additionalArgs?: string[];
+}
+
+// 2. Output Contract (Interface)
+interface CommandOutput {
+  exitCode: number;
+  executionTime: number;
+  result?: any;
+}
+
+// 3. Error Contract (Class)
+class CommandError extends Error {
+  constructor(message: string, code?: string, details?: Record<string, any>) {
+    super(message);
+    this.name = 'CommandError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+// 4. Command Implementation (Class)
+export class ExampleCommand {
+  static readonly metadata = {
+    name: 'ExampleCommand',
+    description: 'Description of what this command does',
+    category: 'example',
+    version: '1.0.0',
+    dependencies: {
+      services: ['IConfigurationService', 'ILogger'],
+      commands: [],
+      external: ['child_process']
+    }
+  };
+
+  constructor(
+    private input: CommandInput,
+    private logger: ILogger,
+    private services: Record<string, any>
+  ) {}
+
+  validate(): void {
+    if (!this.input.profile && !this.services.IConfigurationService) {
+      throw new CommandError('Profile required but no configuration service available');
+    }
+  }
+
+  async execute(): Promise<CommandOutput> {
+    this.validate();
+
+    const startTime = Date.now();
+
+    try {
+      // Command implementation logic
+      const result = await this.performCommand();
+
+      return {
+        exitCode: 0,
+        executionTime: Date.now() - startTime,
+        result
+      };
+    } catch (error) {
+      throw new CommandError(
+        `Command failed: ${error.message}`,
+        'COMMAND_EXECUTION_FAILED',
+        { originalError: error }
+      );
+    }
+  }
+}
+```
+
+## Service Structure Pattern
+
+Services must be portable and reusable:
+
+```typescript
+// ✅ CORRECT: Portable service with own configuration
+export interface ServiceConfig {
+  configDirectory: string;
+  defaultProfile: string;
+  validateProfiles: boolean;
+}
+
+export class ExampleService extends BaseService {
+  constructor(
+    private config: ServiceConfig,  // Service-specific config
+    private logger: ILogger,
+    private fileSystemService?: IFileSystemService
+  ) {
+    super();
+  }
+
+  // Service methods...
+}
+```
+
+## Registry Usage Pattern
+
+**Always use ServiceRegistry for service access:**
+
+```typescript
+// ✅ CORRECT: Registry-based service access
+export class ExampleCommand {
+  private async getConfiguration(): Promise<any> {
+    const serviceRegistry = ServiceRegistry.getInstance();
+    const configService = serviceRegistry.get<IConfigurationService>(
+      'IConfigurationService'
+    );
+
+    return await configService.loadProfile('default');
+  }
+}
+
+// ❌ WRONG: Direct service instantiation
+const configService = new ConfigurationService(config, logger);
+```
+
+## Contract-First Development
+
+1. **Define interfaces first** - Input/Output contracts
+2. **Define error classes** - Specific error types
+3. **Define metadata** - Dependencies and capabilities
+4. **Implement logic** - Write the actual code
+5. **Test contracts** - Verify interface compliance
+
+## Key Principles
+
+- **Self-Contained**: All related types in one file
+- **Static Metadata**: Accessible before instantiation
+- **Interface Dependencies**: Use service interfaces, not concrete classes
+- **Error-Throwing Validation**: Throw detailed errors, not return booleans
+- **Dependency Declaration**: Explicitly declare all dependencies in metadata

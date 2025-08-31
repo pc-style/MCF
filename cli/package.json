@@ -1,15 +1,15 @@
 {
-  "name": "@pc-style/mcf-cli",
-  "version": "1.0.0",
-  "description": "CLI tool for MCF (Multi Component Framework) installation, configuration and setup",
+  "name": "pc-style-mcf-cli",
+  "version": "1.0.1",
+  "description": "CLI tool for MCF (My Claude Flow) installation, configuration and setup",
   "main": "index.js",
   "bin": {
-    "mcf": "./bin/mcf.js"
+    "mcf": "./mcf-standalone-pure.js"
   },
   "scripts": {
-    "test": "node test-simple.js",
-    "dev": "node bin/mcf.js",
-    "start": "node bin/mcf.js"
+    "test": "node test-standalone.js",
+    "dev": "node mcf-standalone-pure.js",
+    "start": "node mcf-standalone-pure.js"
   },
   "keywords": [
     "mcf",
@@ -30,10 +30,6 @@
     "node": ">=14.0.0"
   },
   "preferGlobal": true,
-  "dependencies": {
-    "commander": "^11.0.0",
-    "chalk": "^4.1.2",
-    "inquirer": "^8.2.6",
-    "ora": "^5.4.1"
-  }
+  "type": "module",
+  "dependencies": {}
 }
