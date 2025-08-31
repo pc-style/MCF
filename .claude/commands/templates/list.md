@@ -1,11 +1,14 @@
 ---
-allowed-tools: Bash, Read, Glob
+allowed-tools: Bash, Read, Glob, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 description: List all available project templates with descriptions
 ---
 
 # List Available Project Templates
 
 Display all saved project templates from `~/mcf/templates/` with their descriptions and usage examples.
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 ## Process:
 

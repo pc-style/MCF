@@ -1,12 +1,15 @@
 ---
 description: Analyze the project and generate new specialized agents tailored to current codebase
 argument-hint: [agent-type or description]
-allowed-tools: Task, Read, Write
+allowed-tools: Task, Read, Write, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Project-Specific Agent Generation
 
 **Request:** $ARGUMENTS
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 Generate new specialized agents specifically designed for your current project's needs:
 

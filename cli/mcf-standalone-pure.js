@@ -12,10 +12,10 @@ const __dirname = path.dirname(__filename);
 
 // Package info
 const pkg = {
-  name: "@pc-style/mcf-cli",
-  version: "1.0.0",
+  name: "pc-style-mcf-cli",
+  version: "1.0.3",
   description:
-    "MCF (My Claude Flow) CLI - Installation, configuration and setup tool",
+    "MCF (My Claude Flow) CLI - Streamlined Claude Code integration with profile management, project automation, and MCP server support",
 };
 
 // ============================================================================

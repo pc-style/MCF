@@ -1,12 +1,15 @@
 ---
 description: Use specialized agents to optimize system performance, security, and architecture
 argument-hint: <optimization-area or performance-goal>
-allowed-tools: Task
+allowed-tools: Task, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Multi-Agent System Optimization
 
 **Optimization Target:** $ARGUMENTS
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 Execute comprehensive system optimization using specialized agents for maximum performance and efficiency:
 

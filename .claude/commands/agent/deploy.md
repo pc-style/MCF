@@ -1,201 +1,181 @@
 ---
 description: Use specialized agents to design, implement, and manage deployment pipelines and CI/CD workflows
 argument-hint: <deployment-target or pipeline-type>
-allowed-tools: Task
+allowed-tools: Task, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Multi-Agent Deployment & CI/CD System
 
 **Deployment Target:** $ARGUMENTS
 
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 Execute comprehensive deployment and CI/CD implementation using specialized agents for maximum reliability and efficiency:
 
 ### 1. **Deployment Team Assembly**
 
 **Core Deployment Agents:**
+
 - **devops-engineer**: Infrastructure and deployment pipeline design
 - **security-auditor**: Security validation and compliance checking
-- **perf-optimizer**: Performance monitoring and optimization
+- **perf-optimizer**: Performance testing and optimization
+- **test-engineer**: Automated testing integration
 
-**Specialized Deployment Agents:**
-- **micro-analyzer**: Code analysis and deployment impact assessment
-- **api-designer**: API deployment and contract validation
-- **semantic-navigator**: Codebase understanding and deployment planning
-- **micro-executor**: Pipeline implementation and execution
+### 2. **Infrastructure Assessment**
 
-### 2. **Deployment Methodology**
+**Team:** devops-engineer + security-auditor
 
-**Phase 1: Deployment Strategy Development**
-- Codebase analysis using Serena semantic tools
-- Infrastructure requirements and resource planning
-- Security and compliance requirements assessment
-- Performance and scalability planning
+**Objectives:**
 
-**Phase 2: Pipeline Implementation**
-- CI/CD pipeline design and configuration
-- Automated testing and validation integration
-- Security scanning and vulnerability prevention
-- Performance monitoring and alerting setup
+- Analyze current infrastructure requirements
+- Design scalable deployment architecture
+- Implement security best practices
+- Setup monitoring and alerting
 
-**Phase 3: Deployment & Validation**
-- Staged deployment execution and monitoring
-- Performance validation and optimization
-- Security validation and compliance checking
-- Rollback planning and emergency procedures
+**Deliverables:**
 
-### 3. **Deployment Types & Strategies**
+- Infrastructure-as-Code templates
+- Security configuration guidelines
+- Monitoring dashboard setup
+- Backup and disaster recovery plan
 
-**Application Deployment:**
-- **Blue-Green Deployment**: Zero-downtime deployment with instant rollback
-- **Canary Deployment**: Gradual rollout with monitoring and validation
-- **Rolling Deployment**: Incremental updates with minimal disruption
-- **Immutable Deployment**: Complete replacement with new instances
+### 3. **CI/CD Pipeline Design**
 
-**Infrastructure Deployment:**
-- **Infrastructure as Code**: Terraform, CloudFormation, or Pulumi
-- **Container Orchestration**: Kubernetes, Docker Swarm, or ECS
-- **Serverless Deployment**: AWS Lambda, Azure Functions, or Google Cloud Functions
-- **Hybrid Deployment**: Multi-cloud or on-premises + cloud
+**Team:** devops-engineer + test-engineer
 
-**Database Deployment:**
-- **Schema Migration**: Automated database schema updates
-- **Data Migration**: Large dataset transfers and validation
-- **Rollback Procedures**: Database state restoration capabilities
-- **Performance Optimization**: Query optimization and indexing
+**Pipeline Components:**
 
-### 4. **CI/CD Pipeline Components**
+- **Source Control Integration**: Git webhooks and branch strategies
+- **Build Automation**: Compilation, packaging, and artifact generation
+- **Testing Integration**: Unit, integration, and end-to-end tests
+- **Security Scanning**: SAST, DAST, and dependency vulnerability checks
+- **Deployment Automation**: Blue-green, canary, or rolling deployments
 
-**Continuous Integration:**
-- **Source Control**: Git workflow and branch management
-- **Build Automation**: Automated compilation and packaging
-- **Testing**: Unit, integration, and performance testing
-- **Code Quality**: Static analysis and security scanning
+**Key Features:**
 
-**Continuous Deployment:**
-- **Environment Management**: Development, staging, and production
-- **Configuration Management**: Environment-specific settings
-- **Secrets Management**: Secure credential and key handling
-- **Monitoring & Alerting**: Real-time deployment status
+- Automated rollback mechanisms
+- Environment-specific configurations
+- Approval workflows for production
+- Deployment metrics and health checks
 
-**Deployment Automation:**
-- **Pipeline Orchestration**: Workflow automation and coordination
-- **Infrastructure Provisioning**: Automated resource creation
-- **Application Deployment**: Automated application deployment
-- **Health Checks**: Automated validation and rollback triggers
+### 4. **Security & Compliance Integration**
 
-### 5. **Deployment Tools & Technologies**
+**Team:** security-auditor + devops-engineer
 
-**Serena Semantic Analysis:**
-- find_symbol for deployment impact analysis
-- get_symbol_info for component dependency understanding
-- find_referencing_symbols for integration point mapping
-- get_project_structure for deployment architecture planning
+**Security Measures:**
 
-**CI/CD Platforms:**
-- **GitHub Actions**: GitHub-native CI/CD workflows
-- **GitLab CI**: Integrated GitLab CI/CD pipelines
-- **Jenkins**: Extensible automation server
-- **CircleCI**: Cloud-based CI/CD platform
-- **Azure DevOps**: Microsoft's DevOps platform
+- Container scanning and hardening
+- Secrets management (HashiCorp Vault, AWS Secrets Manager)
+- Access control and RBAC implementation
+- Compliance monitoring (SOC2, GDPR, HIPAA)
+- Audit logging and traceability
 
-**Infrastructure Tools:**
-- **Terraform**: Infrastructure as Code provisioning
-- **Docker**: Containerization and orchestration
-- **Kubernetes**: Container orchestration platform
-- **Ansible**: Configuration management and automation
-- **Helm**: Kubernetes package manager
+### 5. **Performance & Monitoring Setup**
 
-### 6. **Deployment Outputs**
+**Team:** perf-optimizer + devops-engineer
 
-**Pipeline Configuration:**
-- Complete CI/CD pipeline definitions
-- Environment configuration files
-- Security and compliance policies
-- Monitoring and alerting setup
+**Monitoring Stack:**
 
-**Deployment Documentation:**
-- Deployment procedures and checklists
-- Rollback procedures and emergency contacts
-- Performance monitoring and optimization guides
-- Security and compliance documentation
+- Application Performance Monitoring (APM)
+- Infrastructure monitoring (CPU, memory, disk, network)
+- Log aggregation and analysis
+- Error tracking and alerting
+- User experience monitoring
 
-**Operational Tools:**
-- Automated deployment scripts
-- Health check and validation tools
-- Performance monitoring dashboards
-- Security scanning and reporting tools
+**Performance Optimization:**
 
-### 7. **Advanced Deployment Scenarios**
+- Load testing automation
+- Performance regression detection
+- Auto-scaling configuration
+- Resource optimization recommendations
 
-**High-Availability Systems:**
-- devops-engineer + perf-optimizer for HA deployment
-- Focus: Load balancing, auto-scaling, failover procedures
+### 6. **Testing Strategy Integration**
 
-**Security-Critical Deployments:**
-- security-auditor + devops-engineer for secure deployment
-- Focus: Security scanning, compliance validation, access control
+**Team:** test-engineer + devops-engineer
 
-**Performance-Critical Systems:**
-- perf-optimizer + devops-engineer for performance deployment
-- Focus: Performance monitoring, optimization, capacity planning
+**Test Automation:**
 
-**Multi-Environment Deployments:**
-- semantic-navigator + devops-engineer for complex deployment
-- Focus: Environment consistency, configuration management, validation
+- Unit test execution in CI
+- Integration test environments
+- End-to-end test automation
+- Performance test integration
+- Security test automation
 
-### 8. **Deployment Best Practices**
+**Quality Gates:**
 
-**Pipeline Design:**
-- **Automation First**: Minimize manual intervention
-- **Security by Design**: Integrate security scanning early
-- **Testing Integration**: Comprehensive testing at every stage
-- **Monitoring & Alerting**: Real-time visibility and alerting
+- Code coverage requirements
+- Security scan thresholds
+- Performance benchmarks
+- Manual approval processes
 
-**Deployment Execution:**
-- **Staged Rollout**: Gradual deployment with validation
-- **Rollback Capability**: Quick and reliable rollback procedures
-- **Health Monitoring**: Continuous health checking and validation
-- **Performance Validation**: Performance testing and optimization
+### 7. **Deployment Environments**
 
-**Operational Excellence:**
-- **Documentation**: Complete deployment and operational guides
-- **Training**: Team education and skill development
-- **Continuous Improvement**: Regular pipeline optimization
-- **Incident Response**: Clear procedures and escalation paths
+**Environment Strategy:**
 
-### 9. **Deployment Metrics & KPIs**
+- **Development**: Continuous deployment from feature branches
+- **Staging**: Production-like environment for final testing
+- **Production**: Controlled deployment with monitoring and rollback
 
-**Deployment Metrics:**
+**Configuration Management:**
+
+- Environment-specific variables
+- Feature flag management
+- Database migration strategies
+- Service dependency management
+
+### 8. **Monitoring & Observability**
+
+**Team:** devops-engineer + perf-optimizer
+
+**Observability Stack:**
+
+- Metrics collection (Prometheus, DataDog, CloudWatch)
+- Distributed tracing (Jaeger, Zipkin)
+- Log management (ELK, Splunk, Loki)
+- Alerting and notification systems
+- Dashboards and visualization
+
+### 9. **Disaster Recovery & Business Continuity**
+
+**Team:** devops-engineer + security-auditor
+
+**DR Strategy:**
+
+- Backup automation and testing
+- Multi-region deployment strategies
+- Data replication and consistency
+- Recovery time and point objectives (RTO/RPO)
+- Incident response procedures
+
+### 10. **Documentation & Knowledge Transfer**
+
+**Team:** devops-engineer + test-engineer
+
+**Documentation:**
+
+- Deployment runbooks and procedures
+- Troubleshooting guides
+- Architecture diagrams and documentation
+- Team onboarding materials
+- Incident post-mortem templates
+
+### **Execution Plan**
+
+1. **Infrastructure Setup** (devops-engineer)
+2. **Security Framework** (security-auditor)
+3. **CI/CD Pipeline Implementation** (devops-engineer + test-engineer)
+4. **Monitoring Setup** (perf-optimizer + devops-engineer)
+5. **Testing Integration** (test-engineer)
+6. **Documentation** (devops-engineer)
+7. **Production Deployment** (Full team coordination)
+
+### **Success Metrics**
+
 - Deployment frequency and success rate
-- Lead time and cycle time
+- Mean time to deployment (MTTD)
 - Mean time to recovery (MTTR)
-- Change failure rate and rollback frequency
+- Security vulnerability detection and resolution time
+- System uptime and availability
+- Performance metrics and user experience scores
 
-**Performance Metrics:**
-- Application response time and throughput
-- Resource utilization and efficiency
-- Scalability and capacity planning
-- User experience and satisfaction
-
-**Security Metrics:**
-- Security scan results and vulnerability counts
-- Compliance status and audit results
-- Security incident response times
-- Access control and authentication effectiveness
-
-**Operational Metrics:**
-- System availability and uptime
-- Incident frequency and severity
-- Team productivity and efficiency
-- Cost optimization and resource utilization
-
-### 10. **Deployment Workflow**
-
-1. **Planning**: Strategy development and resource allocation
-2. **Implementation**: Pipeline development and configuration
-3. **Testing**: Validation and testing procedures
-4. **Deployment**: Execution and monitoring
-5. **Validation**: Performance and security validation
-6. **Optimization**: Continuous improvement and optimization
-
-**Execute comprehensive multi-agent deployment and CI/CD implementation now.**
+**Agent Coordination:** Each agent brings specialized expertise while maintaining awareness of the overall deployment ecosystem for seamless integration and optimal results.

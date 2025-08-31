@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Read, Write, Edit, MultiEdit, Glob
+allowed-tools: Bash, Read, Write, Edit, MultiEdit, Glob, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 argument-hint: <technology/framework-name>
 description: Research and create a new template using Context7 documentation and web research
 ---
@@ -7,6 +7,9 @@ description: Research and create a new template using Context7 documentation and
 # Auto-Generate Template from Documentation
 
 You are researching and creating a template for: **$1**
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 ## Process:
 

@@ -1,12 +1,22 @@
 ---
 description: Use specialized subagents with isolated context to handle complex tasks efficiently
 argument-hint: <task-description>
-allowed-tools: Task
+allowed-tools: Task, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Efficient Multi-Agent Task Execution
 
 **Task:** $ARGUMENTS
+
+## Gemini MCP Capabilities
+
+**Use Gemini MCP tools for advanced task coordination and creative problem solving:**
+
+- **ask-gemini**: Advanced task decomposition analysis, complex agent coordination evaluation, and structured workflow recommendations with changeMode
+- **brainstorm**: Creative multi-agent solutions, innovative task distribution strategies, and optimization techniques
+- Perfect for analyzing complex task requirements, generating efficient agent workflows, and exploring creative coordination patterns
+- Use changeMode parameter with ask-gemini for structured task orchestration and agent coordination suggestions
+- These tools can save context usage by handling complex workflow analysis and coordination decisions efficiently
 
 Execute this task using specialized subagents with minimal context to optimize token usage:
 
@@ -15,8 +25,9 @@ Execute this task using specialized subagents with minimal context to optimize t
 First, analyze the task and determine which specialized agents to use:
 
 **Available Context-Efficient Agents:**
+
 - **docs-researcher**: Documentation research using Context7 MCP
-- **security-auditor**: Security analysis and vulnerability assessment  
+- **security-auditor**: Security analysis and vulnerability assessment
 - **perf-optimizer**: Performance analysis and optimization
 - **devops-engineer**: Infrastructure, deployment, and automation
 - **api-designer**: API design and implementation
@@ -28,6 +39,7 @@ First, analyze the task and determine which specialized agents to use:
 ### 2. **Parallel Execution Strategy**
 
 Identify subtasks that can be executed in parallel:
+
 - **Independent Research**: Documentation, best practices, examples
 - **Analysis Tasks**: Code review, security audit, performance check
 - **Implementation Work**: Code changes, configuration updates
@@ -36,6 +48,7 @@ Identify subtasks that can be executed in parallel:
 ### 3. **Context Isolation Plan**
 
 For each subagent:
+
 - Provide **only essential context** for their specific task
 - Avoid duplicating information across agents
 - Use **minimal background** necessary for task completion
@@ -55,6 +68,7 @@ Execute the following workflow:
 ### 5. **Efficiency Metrics**
 
 Target outcomes:
+
 - **50-70% token savings** through context isolation
 - **Parallel execution** for faster completion
 - **Specialized expertise** for higher quality results
@@ -63,6 +77,7 @@ Target outcomes:
 ### 6. **Result Integration**
 
 Combine agent outputs to provide:
+
 - **Unified solution** addressing all aspects of the task
 - **Priority-ordered action items** from all agents
 - **Cross-agent insights** and recommendations

@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git*), Bash(gh*)
+allowed-tools: Bash(git*), Bash(gh*), mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 argument-hint: [natural language instruction]
 description: Perform Git/GitHub operations based on natural language
 ---
@@ -7,6 +7,9 @@ description: Perform Git/GitHub operations based on natural language
 Perform Git operation: "$ARGUMENTS"
 
 Repository context:
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 !`git status --porcelain`
 !`git branch --show-current`
 !`git log --oneline -5`
@@ -15,6 +18,7 @@ Repository context:
 Analyze the instruction "$ARGUMENTS" and perform the appropriate Git operation.
 
 Examples I can handle:
+
 - "create a new branch for login feature" → `git checkout -b feature/login`
 - "undo my last commit" → `git reset HEAD~1`
 - "merge main into current branch" → `git pull origin main`

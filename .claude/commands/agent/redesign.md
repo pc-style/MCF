@@ -1,12 +1,15 @@
 ---
 description: Use specialized agents to redesign system architecture, components, or workflows
 argument-hint: <system-component or architecture-area>
-allowed-tools: Task
+allowed-tools: Task, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Multi-Agent System Redesign
 
 **Redesign Target:** $ARGUMENTS
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 Execute comprehensive system redesign using specialized agents for optimal architecture and implementation:
 

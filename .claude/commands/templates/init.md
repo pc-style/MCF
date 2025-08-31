@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash, Read, Write, Edit, MultiEdit
+allowed-tools: Bash, Read, Write, Edit, MultiEdit, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 argument-hint: <template-name>
 description: Initialize a new project from a saved template
 ---
@@ -7,6 +7,9 @@ description: Initialize a new project from a saved template
 # Project Template Initialization
 
 You are initializing a project using the template: **$1**
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 ## Process:
 

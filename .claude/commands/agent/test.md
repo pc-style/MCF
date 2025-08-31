@@ -1,12 +1,15 @@
 ---
 description: Use specialized agents to design, implement, and execute comprehensive testing strategies
 argument-hint: <testing-scope or test-type>
-allowed-tools: Task
+allowed-tools: Task, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 ---
 
 ## Multi-Agent Testing System
 
 **Testing Scope:** $ARGUMENTS
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 Execute comprehensive testing strategies using specialized agents for maximum coverage and quality:
 

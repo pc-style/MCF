@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Write, Edit, Bash
+allowed-tools: Read, Write, Edit, Bash, mcp__gemini-cli__ask-gemini, mcp__gemini-cli__brainstorm
 argument-hint: [workflow-name] | create | run | schedule | monitor
 description: Orchestrate complex automation workflows with task dependencies, scheduling, and cross-platform execution
 model: sonnet
@@ -8,6 +8,9 @@ model: sonnet
 # Workflow Orchestrator
 
 Orchestrate complex automation workflows: $ARGUMENTS
+
+**Gemini MCP Support**: This command has access to Gemini MCP tools for advanced analysis, brainstorming, and efficient problem solving to save context usage.
+
 
 ## Current Workflow State
 
