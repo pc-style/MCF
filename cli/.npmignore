@@ -1,9 +1,4 @@
 # Development files
-test-simple.js
-test-standalone.js
-mcf-standalone.js
-bin/mcf.js
-lib/
 node_modules/
 
 # Config files

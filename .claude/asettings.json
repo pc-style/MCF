@@ -1,16 +1,5 @@
 {
-    "env": {
-      "ANTHROPIC_BASE_URL": "http://localhost:4141",
-      "ANTHROPIC_AUTH_TOKEN": "dummy",
-      "ANTHROPIC_MODEL": "claude-sonnet-4",
-      "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4",
-      "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-sonnet-4",
-      "ANTHROPIC_SMALL_FAST_MODEL": "grok-code-fast-1",
-      "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
-      "DISABLE_TELEMETRY": "1",
-      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
-    },
-    "hooks": {
+  "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
@@ -108,5 +97,3 @@
   },
   "outputStyle": "concise"
 }
-  
-  

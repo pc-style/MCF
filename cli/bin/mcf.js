@@ -33,7 +33,9 @@ const serviceRegistry = ServiceRegistry.getInstance();
 // Register core services
 const loggerFactory = new LoggerFactory();
 serviceRegistry.registerService("LoggerFactory", () => loggerFactory);
-serviceRegistry.registerService("ILogger", () => loggerFactory.getLogger("default"));
+serviceRegistry.registerService("ILogger", () =>
+  loggerFactory.getLogger("default"),
+);
 
 const commandRegistry = new CommandRegistry();
 serviceRegistry.registerService("CommandRegistry", () => commandRegistry);
@@ -42,7 +44,7 @@ serviceRegistry.registerService("CommandRegistry", () => commandRegistry);
 const configService = new ConfigurationService({
   configDirectory: path.join(__dirname, "..", ".mcf"),
   defaultProfileName: "default",
-  validateProfiles: true
+  validateProfiles: true,
 });
 serviceRegistry.registerService("IConfigurationService", () => configService);
 
@@ -54,18 +56,22 @@ const fileSystemService = new FileSystemService({
   maxFileSize: 10 * 1024 * 1024, // 10MB
   permissions: {
     defaultFileMode: 0o644,
-    defaultDirectoryMode: 0o755
-  }
+    defaultDirectoryMode: 0o755,
+  },
 });
 serviceRegistry.registerService("IFileSystemService", () => fileSystemService);
 
 // Register ProjectService
-const projectService = new ProjectService({
-  defaultProjectPath: process.cwd(),
-  workspacePath: path.join(__dirname, "..", ".mcf", "workspaces"),
-  maxDiscoveryDepth: 3,
-  autoDiscover: true
-}, null, fileSystemService);
+const projectService = new ProjectService(
+  {
+    defaultProjectPath: process.cwd(),
+    workspacePath: path.join(__dirname, "..", ".mcf", "workspaces"),
+    maxDiscoveryDepth: 3,
+    autoDiscover: true,
+  },
+  null,
+  fileSystemService,
+);
 serviceRegistry.registerService("IProjectService", () => projectService);
 
 // Register ClaudeService
@@ -76,8 +82,8 @@ const claudeService = new ClaudeService({
   supportedModels: [
     "claude-3-5-sonnet-20241022",
     "claude-3-opus-20240229",
-    "claude-3-haiku-20240307"
-  ]
+    "claude-3-haiku-20240307",
+  ],
 });
 serviceRegistry.registerService("IClaudeService", () => claudeService);
 
@@ -86,7 +92,7 @@ const mcpService = new MCPService({
   configDirectory: path.join(__dirname, "..", ".mcf", "mcp"),
   defaultTimeout: 30000,
   healthCheckInterval: 30000,
-  enableHealthChecks: true
+  enableHealthChecks: true,
 });
 serviceRegistry.registerService("IMCPService", () => mcpService);
 
@@ -97,6 +103,43 @@ program
     "MCF (My Claude Flow) CLI - Installation, configuration and setup tool",
   )
   .version(pkg.version);
+
+// Init command (new)
+program
+  .command("init")
+  .description("Initialize a new MCF project by cloning the repository")
+  .argument("[directory]", "Target directory name (default: MCF)")
+  .option("-b, --branch <name>", "Clone specific branch")
+  .option("-f, --force", "Overwrite existing directory")
+  .option("--no-shallow", "Clone with full repository history")
+  .action(async (directory, options) => {
+    try {
+      const { InitCommand } = await import(
+        "../lib/commands/init/InitCommand.js"
+      );
+      const initCommand = new InitCommand(serviceRegistry);
+
+      // Build arguments array from directory and options
+      const args = [];
+      if (directory) {
+        args.push(directory);
+      }
+      if (options.branch) {
+        args.push("--branch", options.branch);
+      }
+      if (options.force) {
+        args.push("--force");
+      }
+      if (!options.shallow) {
+        args.push("--no-shallow");
+      }
+
+      await initCommand.execute(args);
+    } catch (error) {
+      console.error(chalk.red(`Init command failed: ${error.message}`));
+      process.exit(1);
+    }
+  });
 
 // Install command (enhanced)
 program
@@ -198,7 +241,9 @@ program
   .argument("[args...]", "Subcommand arguments")
   .action(async (subcommand, args, options) => {
     try {
-      const { ConfigCommand } = await import("../lib/commands/config/ConfigCommand.js");
+      const { ConfigCommand } = await import(
+        "../lib/commands/config/ConfigCommand.js"
+      );
       const configCommand = new ConfigCommand(serviceRegistry);
       const allArgs = subcommand ? [subcommand, ...args] : [];
       await configCommand.execute(allArgs);
@@ -216,7 +261,9 @@ program
   .argument("[args...]", "Subcommand arguments")
   .action(async (subcommand, args, options) => {
     try {
-      const { ProjectCommand } = await import("../lib/commands/project/ProjectCommand.js");
+      const { ProjectCommand } = await import(
+        "../lib/commands/project/ProjectCommand.js"
+      );
       const projectCommand = new ProjectCommand(serviceRegistry);
       const allArgs = subcommand ? [subcommand, ...args] : [];
       await projectCommand.execute(allArgs);

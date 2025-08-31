@@ -28,6 +28,11 @@ downloads/
 eggs/
 .eggs/
 lib/
+.cursor/
+.mcf/
+plan/
+tui/
+
 lib64/
 parts/
 sdist/

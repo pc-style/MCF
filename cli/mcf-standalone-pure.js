@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 const pkg = {
   name: "@pc-style/mcf-cli",
   version: "1.0.0",
-  description: "MCF (My Claude Flow) CLI - Installation, configuration and setup tool"
+  description:
+    "MCF (My Claude Flow) CLI - Installation, configuration and setup tool",
 };
 
 // ============================================================================
@@ -29,7 +30,7 @@ const colors = {
   blue: (text) => `\x1b[34m${text}\x1b[0m`,
   cyan: (text) => `\x1b[36m${text}\x1b[0m`,
   gray: (text) => `\x1b[90m${text}\x1b[0m`,
-  bold: (text) => `\x1b[1m${text}\x1b[0m`
+  bold: (text) => `\x1b[1m${text}\x1b[0m`,
 };
 
 // Simple argument parser (replacing commander)
@@ -39,7 +40,7 @@ function parseArgs() {
     command: null,
     subcommand: null,
     options: {},
-    args: []
+    args: [],
   };
 
   if (args.length === 0) {
@@ -47,221 +48,315 @@ function parseArgs() {
   }
 
   // Handle help and version
-  if (args.includes('--help') || args.includes('-h')) {
-    result.command = 'help';
+  if (args.includes("--help") || args.includes("-h")) {
+    result.showHelp = true;
     return result;
   }
 
-  if (args.includes('--version') || args.includes('-V')) {
-    result.command = 'version';
+  if (args.includes("--version") || args.includes("-V")) {
+    result.showVersion = true;
     return result;
   }
 
-  // Get main command (first non-option argument)
-  let commandIndex = -1;
-  for (let i = 0; i < args.length; i++) {
-    if (!args[i].startsWith('-') && (i === 0 || !args[i-1].startsWith('-') || args[i-1] === '--help' || args[i-1] === '-h' || args[i-1] === '--version' || args[i-1] === '-V')) {
-      commandIndex = i;
-      break;
-    }
-    // Skip option values
-    if (args[i] === '--config' || args[i] === '-c' || args[i] === '--project' || args[i] === '-p' || args[i] === '--working-directory' || args[i] === '-w') {
-      i++; // Skip the next argument (option value)
-    }
-  }
-  
-  if (commandIndex >= 0) {
-    result.command = args[commandIndex];
-    
-    // For config command, get subcommand
-    if (result.command === 'config' && commandIndex + 1 < args.length && !args[commandIndex + 1].startsWith('-')) {
-      result.subcommand = args[commandIndex + 1];
-      result.args = args.slice(commandIndex + 2);
-    } else {
-      result.args = args.slice(commandIndex + 1);
-    }
-  }
+  // Parse command and options
+  result.command = args[0];
 
-  // Parse options
-  for (let i = 0; i < args.length; i++) {
+  // Simple option parsing
+  for (let i = 1; i < args.length; i++) {
     const arg = args[i];
-    if (arg.startsWith('-')) {
-      if (arg === '--force' || arg === '-f') {
-        result.options.force = true;
-      } else if (arg === '--debug' || arg === '-d') {
-        result.options.debug = true;
-      } else if (arg === '--config' || arg === '-c') {
-        result.options.config = args[i + 1];
-        i++; // Skip next arg
-      } else if (arg === '--project' || arg === '-p') {
-        result.options.project = args[i + 1];
-        i++; // Skip next arg
-      } else if (arg === '--working-directory' || arg === '-w') {
-        result.options.workingDirectory = args[i + 1];
-        i++; // Skip next arg
-      } else if (arg === '--dangerous-skip') {
-        result.options.dangerousSkip = true;
-      } else if (arg === '--no-interactive') {
-        result.options.interactive = false;
-      } else if (arg === '--') {
-        // Everything after -- goes to pass-through
-        result.options.passThroughArgs = args.slice(i + 1);
-        break;
+    if (arg.startsWith("--")) {
+      const key = arg.substring(2);
+      if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+        result.options[key] = args[i + 1];
+        i++; // skip next arg
+      } else {
+        result.options[key] = true;
       }
+    } else if (arg.startsWith("-")) {
+      result.options[arg.substring(1)] = true;
+    } else {
+      result.args.push(arg);
     }
+  }
+
+  if (result.args.length > 0) {
+    result.subcommand = result.args[0];
+    result.args = result.args.slice(1);
   }
 
   return result;
 }
 
 // ============================================================================
-// CORE CLASSES
+// CONFIGURATION SERVICE (embedded to avoid external dependencies)
 // ============================================================================
 
-/**
- * Base error class for CLI operations
- */
-class CLIError extends Error {
-  constructor(message, code, details) {
-    super(message);
-    this.code = code;
-    this.details = details;
-    this.name = "CLIError";
-  }
-}
-
-/**
- * Simple logger implementation
- */
-class Logger {
-  constructor(name) {
-    this.name = name;
-  }
-
-  info(message, data) {
-    console.log(`[INFO] ${message}`, data ? JSON.stringify(data) : "");
-  }
-
-  warn(message, data) {
-    console.log(colors.yellow(`[WARN] ${message}`), data ? JSON.stringify(data) : "");
-  }
-
-  error(message, data) {
-    console.log(colors.red(`[ERROR] ${message}`), data ? JSON.stringify(data) : "");
-  }
-
-  debug(message, data) {
-    if (process.env.DEBUG) {
-      console.log(colors.gray(`[DEBUG] ${message}`), data ? JSON.stringify(data) : "");
-    }
-  }
-}
-
-/**
- * Configuration service for profile management
- */
 class ConfigurationService {
   constructor() {
-    this.logger = new Logger("ConfigurationService");
-    // Look for profiles in $HOME/.mcf/profiles
-    this.profilesDir = path.join(os.homedir(), ".mcf", "profiles");
+    this.configDir = path.join(os.homedir(), ".mcf");
+    this.profilesDir = path.join(this.configDir, "profiles");
   }
 
-  async ensureProfilesDirectory() {
-    try {
-      await fs.mkdir(this.profilesDir, { recursive: true });
-    } catch (error) {
-      if (error.code !== "EEXIST") {
-        throw error;
-      }
-    }
-  }
-
-  getProfilePath(profileId) {
-    return path.join(this.profilesDir, `${profileId}.json`);
-  }
-
-  async loadProfile(profileId) {
-    try {
-      const profilePath = this.getProfilePath(profileId);
-      const profileData = await fs.readFile(profilePath, "utf-8");
-      return JSON.parse(profileData);
-    } catch {
-      return null;
-    }
-  }
-
-  async saveProfile(profile) {
-    await this.ensureProfilesDirectory();
-    const profilePath = this.getProfilePath(profile.id);
-    await fs.writeFile(profilePath, JSON.stringify(profile, null, 2), "utf-8");
-    this.logger.info(`Profile '${profile.id}' saved to ${profilePath}`);
+  async ensureConfigDir() {
+    await fs.mkdir(this.profilesDir, { recursive: true });
   }
 
   async listProfiles() {
     try {
-      await this.ensureProfilesDirectory();
-      const entries = await fs.readdir(this.profilesDir);
-      return entries
-        .filter(entry => entry.endsWith(".json"))
-        .map(entry => entry.replace(".json", ""));
-    } catch {
+      await this.ensureConfigDir();
+      const files = await fs.readdir(this.profilesDir);
+      return files
+        .filter((file) => file.endsWith(".json"))
+        .map((file) => path.basename(file, ".json"));
+    } catch (error) {
       return [];
     }
   }
 
-  async deleteProfile(profileId) {
+  async getProfile(profileName) {
+    const profilePath = path.join(this.profilesDir, `${profileName}.json`);
     try {
-      const profilePath = this.getProfilePath(profileId);
+      const content = await fs.readFile(profilePath, "utf-8");
+      return JSON.parse(content);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async setProfile(profileName, profileData) {
+    await this.ensureConfigDir();
+    const profilePath = path.join(this.profilesDir, `${profileName}.json`);
+    await fs.writeFile(profilePath, JSON.stringify(profileData, null, 2));
+  }
+
+  async deleteProfile(profileName) {
+    const profilePath = path.join(this.profilesDir, `${profileName}.json`);
+    try {
       await fs.unlink(profilePath);
       return true;
-    } catch {
+    } catch (error) {
       return false;
     }
   }
 
-  async profileExists(profileId) {
-    try {
-      const profilePath = this.getProfilePath(profileId);
-      await fs.access(profilePath);
-      return true;
-    } catch {
-      return false;
-    }
+  createDefaultProfile(name, environment = "development") {
+    return {
+      id: this.generateProfileId(name),
+      name: name,
+      environment: environment,
+      version: "1.0.0",
+      created: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      config: {
+        timeout: 60000,
+        logLevel: "info",
+        maxRetries: 3,
+        claude: {
+          configDirectory: path.join(
+            this.configDir,
+            "claude-configs",
+            this.generateProfileId(name),
+          ),
+        },
+      },
+      permissions: {
+        allowedServices: ["claude", "filesystem"],
+        blockedServices: [],
+      },
+    };
   }
 
   generateProfileId(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-  }
-
-  async createProfile(name, environment = "development") {
-    const profileId = this.generateProfileId(name);
-    const profile = {
-      id: profileId,
-      name,
-      description: `Profile for ${environment} environment`,
-      environment,
-      config: {
-        timeout: 30000,
-        maxRetries: 3,
-        logLevel: "info"
-      },
-      version: "1.0.0",
-      lastUpdated: new Date()
-    };
-
-    await this.saveProfile(profile);
-    return profile;
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 }
 
 // ============================================================================
-// COMMAND IMPLEMENTATIONS
+// UTILITY FUNCTIONS
 // ============================================================================
 
 /**
- * Show help information
+ * Simple spinner implementation
  */
+function createSpinner(text) {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  let frameIndex = 0;
+  let intervalId = null;
+  let currentText = text;
+
+  return {
+    start() {
+      process.stdout.write("\x1B[?25l"); // Hide cursor
+      intervalId = setInterval(() => {
+        process.stdout.write(`\r${frames[frameIndex]} ${currentText}`);
+        frameIndex = (frameIndex + 1) % frames.length;
+      }, 100);
+    },
+
+    succeed(text) {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      process.stdout.write(`\r✅ ${text || currentText}\n`);
+      process.stdout.write("\x1B[?25h"); // Show cursor
+    },
+
+    fail(text) {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      process.stdout.write(`\r❌ ${text || currentText}\n`);
+      process.stdout.write("\x1B[?25h"); // Show cursor
+    },
+
+    text(newText) {
+      currentText = newText;
+    },
+  };
+}
+
+/**
+ * Check if git is available
+ */
+async function checkGitAvailability() {
+  return new Promise((resolve, reject) => {
+    const git = spawn("git", ["--version"], { stdio: "pipe" });
+
+    git.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(
+          new Error(
+            "Git is not available. Please install git to use the init command.",
+          ),
+        );
+      }
+    });
+
+    git.on("error", (error) => {
+      reject(
+        new Error(
+          `Git is not available: ${error.message}. Please install git to use the init command.`,
+        ),
+      );
+    });
+  });
+}
+
+/**
+ * Check if target directory exists and handle accordingly
+ */
+async function checkTargetDirectory(targetDirectory, force) {
+  const absolutePath = path.resolve(process.cwd(), targetDirectory);
+
+  try {
+    const stats = await fs.stat(absolutePath);
+
+    if (stats.isDirectory()) {
+      // Check if directory is empty
+      const files = await fs.readdir(absolutePath);
+      if (files.length > 0) {
+        if (!force) {
+          throw new Error(
+            `Directory '${targetDirectory}' already exists and is not empty. Use --force to overwrite.`,
+          );
+        } else {
+          console.log(
+            colors.yellow(
+              `⚠️  Directory '${targetDirectory}' exists. Overwriting due to --force flag.`,
+            ),
+          );
+        }
+      }
+    } else {
+      throw new Error(`'${targetDirectory}' exists but is not a directory.`);
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      // Directory doesn't exist, which is fine
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Clone the MCF repository
+ */
+async function cloneRepository(repositoryUrl, targetDirectory, options) {
+  const spinner = createSpinner("Cloning MCF repository...");
+  spinner.start();
+
+  return new Promise((resolve, reject) => {
+    // Build git clone arguments
+    const gitArgs = ["clone"];
+
+    if (options.shallow !== false) {
+      gitArgs.push("--depth", "1");
+    }
+
+    if (options.branch) {
+      gitArgs.push("--branch", options.branch);
+    }
+
+    gitArgs.push(repositoryUrl, targetDirectory);
+
+    // Execute git clone
+    const git = spawn("git", gitArgs, {
+      stdio: ["inherit", "pipe", "pipe"],
+      cwd: process.cwd(),
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    git.stdout.on("data", (data) => {
+      stdout += data.toString();
+      // Update spinner with progress if available
+      const output = data.toString().trim();
+      if (output) {
+        spinner.text(`Cloning MCF repository... ${output.split("\n").pop()}`);
+      }
+    });
+
+    git.stderr.on("data", (data) => {
+      stderr += data.toString();
+      // Git often sends progress to stderr
+      const output = data.toString().trim();
+      if (output && !output.toLowerCase().includes("error")) {
+        spinner.text(`Cloning MCF repository... ${output.split("\n").pop()}`);
+      }
+    });
+
+    git.on("close", (code) => {
+      if (code === 0) {
+        spinner.succeed("MCF repository cloned successfully!");
+        resolve();
+      } else {
+        spinner.fail("Failed to clone MCF repository");
+        const errorMessage = stderr || stdout || "Unknown git error";
+        reject(new Error(`Git clone failed: ${errorMessage}`));
+      }
+    });
+
+    git.on("error", (error) => {
+      spinner.fail("Failed to clone MCF repository");
+      reject(new Error(`Git clone failed: ${error.message}`));
+    });
+  });
+}
+
+// ============================================================================
+// HELP AND VERSION
+// ============================================================================
+
 function showHelp() {
   console.log(`Usage: mcf [options] [command]`);
   console.log();
@@ -272,13 +367,29 @@ function showHelp() {
   console.log("  -h, --help                      display help for command");
   console.log();
   console.log("Commands:");
-  console.log("  config [subcommand] [args...]   Manage MCF configuration profiles");
-  console.log("  run [options]                   Execute Claude Code with configuration and flags");
-  console.log("  install                         Install MCF CLI to ~/.local/bin/mcf");
-  console.log("  status                          Check MCF installation status");
+  console.log(
+    "  init [directory] [options]      Initialize a new MCF project by cloning the repository",
+  );
+  console.log(
+    "  config [subcommand] [args...]   Manage MCF configuration profiles",
+  );
+  console.log(
+    "  run [options]                   Execute Claude Code with configuration and flags",
+  );
+  console.log(
+    "  install                         Install MCF CLI to ~/.local/bin/mcf",
+  );
+  console.log(
+    "  status                          Check MCF installation status",
+  );
   console.log("  help [command]                  display help for command");
   console.log();
   console.log("Examples:");
+  console.log("  mcf init                        # Clone into 'MCF' directory");
+  console.log(
+    "  mcf init my-project             # Clone into 'my-project' directory",
+  );
+  console.log("  mcf init --branch develop       # Clone 'develop' branch");
   console.log("  mcf config list");
   console.log("  mcf config create myprofile");
   console.log("  mcf run --config myprofile");
@@ -289,135 +400,186 @@ function showHelp() {
  * Show version information
  */
 function showVersion() {
-  console.log(pkg.version);
+  console.log(`${pkg.name} ${pkg.version}`);
+}
+
+// ============================================================================
+// COMMAND IMPLEMENTATIONS
+// ============================================================================
+
+/**
+ * Init command implementation
+ */
+async function initCommand(subcommand, args, options) {
+  console.log(colors.blue(colors.bold("🚀 MCF Project Initialization")));
+  console.log();
+
+  const targetDirectory = args.length > 0 ? args[0] : "MCF";
+  const repositoryUrl = "https://github.com/pc-style/MCF.git";
+
+  try {
+    // Check if git is available
+    await checkGitAvailability();
+
+    // Check if target directory already exists
+    await checkTargetDirectory(targetDirectory, options.force);
+
+    // Clone the repository
+    await cloneRepository(repositoryUrl, targetDirectory, {
+      branch: options.branch || options.b,
+      shallow: !options["no-shallow"],
+      force: options.force || options.f,
+    });
+
+    // Display success message and next steps
+    console.log();
+    console.log(
+      colors.green(colors.bold("✅ MCF project initialized successfully!")),
+    );
+    console.log();
+    console.log(colors.blue("Next steps:"));
+    console.log(`  1. ${colors.yellow(`cd ${targetDirectory}`)}`);
+    console.log(`  2. ${colors.yellow("mcf install")} - Install MCF framework`);
+    console.log(
+      `  3. ${colors.yellow("mcf config create <profile>")} - Create a configuration profile`,
+    );
+    console.log(
+      `  4. ${colors.yellow("mcf run --config <profile>")} - Start using MCF with Claude Code`,
+    );
+    console.log();
+    console.log(colors.blue("Documentation:"));
+    console.log(
+      `  • README: ${colors.cyan(path.join(targetDirectory, "README.md"))}`,
+    );
+    console.log(
+      `  • Documentation: ${colors.cyan(path.join(targetDirectory, "docs/"))}`,
+    );
+    console.log();
+    console.log(colors.gray("Happy coding with MCF! 🚀"));
+  } catch (error) {
+    console.error(
+      colors.red(`❌ Failed to initialize MCF project: ${error.message}`),
+    );
+    throw error;
+  }
 }
 
 /**
- * Configuration command implementation
+ * Config command implementation
  */
 async function configCommand(subcommand, args, options) {
   const configService = new ConfigurationService();
 
   if (!subcommand) {
-    console.log(colors.blue("MCF Config Command Help"));
-    console.log("─".repeat(50));
-    console.log();
-    console.log("Manage MCF configuration profiles");
+    console.log(colors.blue(colors.bold("MCF Configuration Management")));
     console.log();
     console.log("Available subcommands:");
-    console.log("  list, ls                    List all profiles");
-    console.log("  show, get <id>             Show profile details");
-    console.log("  create, new <name> [env]   Create new profile");
-    console.log("  delete, del, rm <id>       Delete profile");
+    console.log("  list, ls           List all profiles");
+    console.log("  create <name>      Create new profile");
+    console.log("  show <name>        Show profile details");
+    console.log("  delete <name>      Delete profile");
     console.log();
+    console.log("Usage: mcf config <subcommand> [args...]");
     return;
   }
 
-  switch (subcommand.toLowerCase()) {
+  switch (subcommand) {
     case "list":
     case "ls":
-      const profileIds = await configService.listProfiles();
-
-      if (profileIds.length === 0) {
+      const profiles = await configService.listProfiles();
+      if (profiles.length === 0) {
         console.log(colors.yellow("No configuration profiles found."));
-        console.log("Create one with: mcf config create <name> [environment]");
-        return;
-      }
-
-      console.log(colors.blue("MCF Configuration Profiles:"));
-      console.log();
-
-      for (const profileId of profileIds) {
-        console.log(`  ${colors.cyan(profileId)}`);
-      }
-
-      console.log();
-      console.log(`Total: ${profileIds.length} profile(s)`);
-      break;
-
-    case "show":
-    case "get":
-      const profileId = args[0];
-      if (!profileId) {
-        console.log(colors.red("Profile ID is required"));
-        console.log("Usage: mcf config show <profile-id>");
-        return;
-      }
-
-      const profile = await configService.loadProfile(profileId);
-
-      if (!profile) {
-        console.log(colors.red(`Profile '${profileId}' not found`));
-        return;
-      }
-
-      console.log(colors.blue(`Profile: ${profileId}`));
-      console.log("─".repeat(50));
-      console.log(`Name: ${colors.cyan(profile.name)}`);
-      console.log(`Environment: ${colors.cyan(profile.environment || "undefined")}`);
-
-      if (profile.description) {
-        console.log(`Description: ${profile.description}`);
-      }
-
-      if (profile.config?.claude?.configDirectory) {
+        console.log("Create one with: mcf config create <name>");
+      } else {
+        console.log(colors.blue("MCF Configuration Profiles:"));
         console.log();
-        console.log(colors.blue("Claude Configuration:"));
-        console.log(`  Config Directory: ${colors.green(profile.config.claude.configDirectory)}`);
+        profiles.forEach((profile) => {
+          console.log(`  ${colors.cyan(profile)}`);
+        });
+        console.log();
+        console.log(`Total: ${profiles.length} profile(s)`);
       }
       break;
 
     case "create":
-    case "new":
-      const [name, environment = "development"] = args;
-
-      if (!name) {
+      if (args.length === 0) {
         console.log(colors.red("Profile name is required"));
         console.log("Usage: mcf config create <name> [environment]");
         return;
       }
 
-      const validEnvs = ["development", "production", "staging", "test"];
-      if (!validEnvs.includes(environment)) {
-        console.log(colors.red(`Invalid environment: ${environment}`));
-        console.log(`Valid environments: ${validEnvs.join(", ")}`);
+      const profileName = args[0];
+      const environment = args[1] || "development";
+
+      // Check if profile already exists
+      const existingProfile = await configService.getProfile(profileName);
+      if (existingProfile) {
+        console.log(colors.red(`Profile '${profileName}' already exists`));
         return;
       }
 
-      const newProfileId = configService.generateProfileId(name);
-      if (await configService.profileExists(newProfileId)) {
-        console.log(colors.red(`Profile '${newProfileId}' already exists`));
+      const newProfile = configService.createDefaultProfile(
+        profileName,
+        environment,
+      );
+      await configService.setProfile(profileName, newProfile);
+
+      console.log(
+        colors.green(`Profile '${profileName}' created successfully`),
+      );
+      console.log(`Environment: ${environment}`);
+      console.log(
+        `Claude config directory: ${newProfile.config.claude.configDirectory}`,
+      );
+      console.log();
+      console.log("Use with: mcf run --config " + profileName);
+      break;
+
+    case "show":
+      if (args.length === 0) {
+        console.log(colors.red("Profile name is required"));
+        console.log("Usage: mcf config show <name>");
         return;
       }
 
-      const newProfile = await configService.createProfile(name, environment);
-      console.log(colors.green(`Profile '${newProfile.id}' created successfully`));
+      const profile = await configService.getProfile(args[0]);
+      if (!profile) {
+        console.log(colors.red(`Profile '${args[0]}' not found`));
+        return;
+      }
+
+      console.log(colors.blue(`Profile: ${args[0]}`));
+      console.log(colors.gray("─".repeat(50)));
+      console.log(`Name: ${colors.cyan(profile.name)}`);
+      console.log(`Environment: ${colors.cyan(profile.environment)}`);
+      console.log(`Version: ${profile.version}`);
+      console.log(
+        `Claude Config Dir: ${colors.green(profile.config.claude.configDirectory)}`,
+      );
+
+      if (profile.created) {
+        console.log(`Created: ${new Date(profile.created).toLocaleString()}`);
+      }
       break;
 
     case "delete":
-    case "del":
-    case "remove":
-    case "rm":
-      const deleteProfileId = args[0];
-      if (!deleteProfileId) {
-        console.log(colors.red("Profile ID is required"));
+      if (args.length === 0) {
+        console.log(colors.red("Profile name is required"));
+        console.log("Usage: mcf config delete <name>");
         return;
       }
 
-      if (!(await configService.profileExists(deleteProfileId))) {
-        console.log(colors.red(`Profile '${deleteProfileId}' not found`));
-        return;
-      }
-
-      const success = await configService.deleteProfile(deleteProfileId);
-      if (success) {
-        console.log(colors.green(`Profile '${deleteProfileId}' deleted successfully`));
+      const deleteResult = await configService.deleteProfile(args[0]);
+      if (deleteResult) {
+        console.log(colors.green(`Profile '${args[0]}' deleted successfully`));
+      } else {
+        console.log(colors.red(`Profile '${args[0]}' not found`));
       }
       break;
 
     default:
       console.log(colors.red(`Unknown config subcommand: ${subcommand}`));
-      break;
+      console.log("Available: list, create, show, delete");
   }
 }
 
@@ -425,60 +587,63 @@ async function configCommand(subcommand, args, options) {
  * Run command implementation
  */
 async function runCommand(subcommand, args, options) {
-  const configService = new ConfigurationService();
+  console.log(colors.blue(colors.bold("🚀 Starting Claude Code")));
+  console.log();
+
+  // Load configuration if profile specified
+  let profile = null;
+  let claudeConfigDir = null;
+
+  if (options.config) {
+    const configService = new ConfigurationService();
+    profile = await configService.getProfile(options.config);
+
+    if (!profile) {
+      console.log(
+        colors.yellow(
+          `⚠️  Profile '${options.config}' not found, using defaults`,
+        ),
+      );
+    } else {
+      console.log(colors.blue(`🔧 Using profile: ${options.config}`));
+      claudeConfigDir = profile.config.claude.configDirectory;
+    }
+  }
+
+  // Show execution details
+  if (options.debug) {
+    console.log(colors.gray("Debug mode: enabled"));
+  }
+
+  if (options.project) {
+    console.log(colors.gray(`Project: ${options.project}`));
+  }
+
+  if (options.passThroughArgs && options.passThroughArgs.length > 0) {
+    console.log(colors.gray(`Arguments: ${options.passThroughArgs.join(" ")}`));
+  }
+
+  const workingDirectory = options.workingDirectory || process.cwd();
+  console.log(colors.gray(`Directory: ${workingDirectory}`));
+
+  if (claudeConfigDir) {
+    console.log(colors.gray(`CLAUDE_CONFIG_DIR: ${claudeConfigDir}`));
+  }
+  console.log();
 
   try {
-    // Load profile configuration if specified
-    let profileConfig = null;
-    if (options.config) {
-      profileConfig = await configService.loadProfile(options.config);
-      if (!profileConfig) {
-        console.log(colors.yellow(`⚠️  Profile '${options.config}' not found, using defaults`));
-      } else {
-        console.log(colors.blue(`🔧 Using profile: ${options.config}`));
-      }
-    }
-
-    // Determine working directory
-    let workingDirectory = options.workingDirectory || process.cwd();
-
     // Configure environment
     const env = { ...process.env };
+    if (claudeConfigDir) {
+      env.CLAUDE_CONFIG_DIR = claudeConfigDir;
 
-    // Apply profile configuration for CLAUDE_CONFIG_DIR
-    if (profileConfig?.config?.claude?.configDirectory) {
-      env.CLAUDE_CONFIG_DIR = profileConfig.config.claude.configDirectory;
+      // Ensure Claude config directory exists
+      await fs.mkdir(claudeConfigDir, { recursive: true });
     }
 
-    // Show execution details
-    console.log(colors.blue(colors.bold("🚀 Starting Claude Code")));
-    console.log();
+    console.log(colors.blue("🚀 Launching Claude Code..."));
 
-    if (options.config) {
-      console.log(colors.gray(`Profile: ${options.config}`));
-    }
-
-    if (options.debug) {
-      console.log(colors.gray("Debug mode: enabled"));
-    }
-
-    if (options.project) {
-      console.log(colors.gray(`Project: ${options.project}`));
-    }
-
-    if (options.passThroughArgs && options.passThroughArgs.length > 0) {
-      console.log(colors.gray(`Arguments: ${options.passThroughArgs.join(" ")}`));
-    }
-
-    console.log(colors.gray(`Directory: ${workingDirectory}`));
-
-    if (env.CLAUDE_CONFIG_DIR) {
-      console.log(colors.gray(`🗂️  CLAUDE_CONFIG_DIR: ${env.CLAUDE_CONFIG_DIR}`));
-    }
-
-    console.log();
-
-    // Build Claude arguments
+    // Build arguments
     const claudeArgs = [];
     if (options.dangerousSkip) {
       claudeArgs.push("--dangerously-skip-permissions");
@@ -493,49 +658,38 @@ async function runCommand(subcommand, args, options) {
       claudeArgs.push(...options.passThroughArgs);
     }
 
-    console.log(colors.blue("🚀 Launching Claude Code..."));
-    console.log(colors.gray(`Command: claude ${claudeArgs.join(" ")}`));
-
     // Execute Claude directly
     const child = spawn("claude", claudeArgs, {
       stdio: "inherit",
       env,
-      cwd: workingDirectory
+      cwd: workingDirectory,
     });
 
     return new Promise((resolve) => {
       child.on("exit", (code, signal) => {
-        const result = {
-          exitCode: code || 0,
-          success: (code || 0) === 0,
-          signal
-        };
-
-        if (result.success) {
+        if (code === 0) {
           console.log();
-          console.log(colors.green(`✅ Claude Code completed successfully`));
+          console.log(colors.green("✅ Claude Code completed successfully"));
         } else if (signal) {
           console.log();
-          console.log(colors.yellow(`⚠️  Claude Code terminated by signal: ${signal}`));
+          console.log(
+            colors.yellow(`⚠️  Claude Code terminated by signal: ${signal}`),
+          );
         } else {
           console.log();
           console.log(colors.red(`❌ Claude Code exited with code: ${code}`));
         }
-
-        resolve(result);
+        resolve();
       });
 
       child.on("error", (error) => {
         console.log();
-        console.error(colors.red(`❌ Failed to start Claude: ${error.message}`));
-        resolve({
-          exitCode: 1,
-          success: false,
-          error: error.message
-        });
+        console.error(
+          colors.red(`❌ Failed to start Claude: ${error.message}`),
+        );
+        resolve();
       });
     });
-
   } catch (error) {
     console.error(colors.red(`❌ Failed to run Claude Code: ${error.message}`));
     throw error;
@@ -548,38 +702,42 @@ async function runCommand(subcommand, args, options) {
 async function installCommand(subcommand, args, options) {
   console.log(colors.blue(colors.bold("🚀 MCF CLI Self-Installer")));
   console.log();
-  
+
   try {
     const homeDir = os.homedir();
     const localBinDir = path.join(homeDir, ".local", "bin");
     const targetPath = path.join(localBinDir, "mcf");
-    
+
     // Ensure ~/.local/bin exists
     console.log(colors.blue("📁 Ensuring ~/.local/bin directory exists..."));
     await fs.mkdir(localBinDir, { recursive: true });
-    
+
     // Check if already installed
     if (!options.force) {
       try {
         await fs.access(targetPath);
-        console.log(colors.yellow("⚠️  MCF CLI is already installed at ~/.local/bin/mcf"));
-        console.log("Use --force to overwrite or run 'mcf --version' to check current version");
+        console.log(
+          colors.yellow("⚠️  MCF CLI is already installed at ~/.local/bin/mcf"),
+        );
+        console.log(
+          "Use --force to overwrite or run 'mcf --version' to check current version",
+        );
         return;
       } catch {
         // File doesn't exist, proceed with installation
       }
     }
-    
+
     // Copy this file to ~/.local/bin/mcf
     console.log(colors.blue("📋 Installing MCF CLI to ~/.local/bin/mcf..."));
     const currentScript = __filename;
-    
+
     // Copy the script directly (no modification needed since profiles are in $HOME/.mcf)
     await fs.copyFile(currentScript, targetPath);
-    
+
     // Make executable
     await fs.chmod(targetPath, 0o755);
-    
+
     console.log(colors.green("✅ MCF CLI installed successfully!"));
     console.log();
     console.log(colors.blue("Installation complete:"));
@@ -599,8 +757,9 @@ async function installCommand(subcommand, args, options) {
     console.log(colors.blue("Profile management:"));
     console.log("• Create profiles with: mcf config create <name>");
     console.log("• Use profiles with: mcf run --config <profile-name>");
-    console.log("• Profiles control CLAUDE_CONFIG_DIR for different Claude configurations");
-    
+    console.log(
+      "• Profiles control CLAUDE_CONFIG_DIR for different Claude configurations",
+    );
   } catch (error) {
     console.log(colors.red("❌ Installation failed"));
     console.log(colors.red(`Error: ${error.message}`));
@@ -619,7 +778,7 @@ async function installCommand(subcommand, args, options) {
 async function statusCommand(subcommand, args, options) {
   console.log(colors.blue(colors.bold("📊 MCF Status Check")));
   console.log();
-  
+
   // Check Claude installation
   try {
     const child = spawn("claude", ["--version"], { stdio: "pipe" });
@@ -645,14 +804,14 @@ async function statusCommand(subcommand, args, options) {
   const configService = new ConfigurationService();
   const profiles = await configService.listProfiles();
   console.log(`📁 Configuration profiles: ${profiles.length}`);
-  
+
   if (profiles.length > 0) {
     console.log(colors.blue("Available profiles:"));
-    profiles.forEach(profile => {
+    profiles.forEach((profile) => {
       console.log(`  • ${colors.cyan(profile)}`);
     });
   }
-  
+
   console.log();
   console.log(colors.blue("MCF CLI is ready to use!"));
   console.log();
@@ -667,17 +826,26 @@ async function statusCommand(subcommand, args, options) {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   // Handle help and version directly (but not if they're after --)
-  const hasDoubleDash = args.includes('--');
-  const beforeDoubleDash = hasDoubleDash ? args.slice(0, args.indexOf('--')) : args;
-  
-  if (args.length === 0 || beforeDoubleDash.includes('--help') || beforeDoubleDash.includes('-h')) {
+  const hasDoubleDash = args.includes("--");
+  const beforeDoubleDash = hasDoubleDash
+    ? args.slice(0, args.indexOf("--"))
+    : args;
+
+  if (
+    args.length === 0 ||
+    beforeDoubleDash.includes("--help") ||
+    beforeDoubleDash.includes("-h")
+  ) {
     showHelp();
     return;
   }
 
-  if (beforeDoubleDash.includes('--version') || beforeDoubleDash.includes('-V')) {
+  if (
+    beforeDoubleDash.includes("--version") ||
+    beforeDoubleDash.includes("-V")
+  ) {
     showVersion();
     return;
   }
@@ -686,6 +854,30 @@ async function main() {
 
   try {
     switch (command) {
+      case "init":
+        // Parse init command options
+        const initOptions = {
+          force: args.includes("--force") || args.includes("-f"),
+          branch: null,
+          "no-shallow": args.includes("--no-shallow"),
+        };
+
+        // Find branch option
+        const branchIndex = args.findIndex(
+          (arg) => arg === "--branch" || arg === "-b",
+        );
+        if (branchIndex >= 0 && branchIndex + 1 < args.length) {
+          initOptions.branch = args[branchIndex + 1];
+        }
+
+        // Get directory argument (first non-option argument)
+        const initArgs = args
+          .slice(1)
+          .filter((arg) => !arg.startsWith("-") && arg !== initOptions.branch);
+
+        await initCommand(null, initArgs, initOptions);
+        break;
+
       case "config":
         const configSubcommand = args[1];
         const configArgs = args.slice(2);
@@ -701,13 +893,15 @@ async function main() {
           workingDirectory: null,
           dangerousSkip: false,
           interactive: true,
-          passThroughArgs: []
+          passThroughArgs: [],
         };
 
         // Find -- separator
         const separatorIndex = args.indexOf("--");
-        const runArgs = separatorIndex >= 0 ? args.slice(1, separatorIndex) : args.slice(1);
-        const passThrough = separatorIndex >= 0 ? args.slice(separatorIndex + 1) : [];
+        const runArgs =
+          separatorIndex >= 0 ? args.slice(1, separatorIndex) : args.slice(1);
+        const passThrough =
+          separatorIndex >= 0 ? args.slice(separatorIndex + 1) : [];
 
         // Parse run options
         for (let i = 0; i < runArgs.length; i++) {
@@ -743,7 +937,9 @@ async function main() {
         break;
 
       case "install":
-        const installOptions = { force: args.includes("--force") || args.includes("-f") };
+        const installOptions = {
+          force: args.includes("--force") || args.includes("-f"),
+        };
         await installCommand(null, [], installOptions);
         break;
 

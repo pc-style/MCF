@@ -3,7 +3,7 @@
   "name": "My Claude Flow",
   "config": {
     "claude": {
-      "configDirectory": "/Users/pcstyle/mcf/.claude"
+      "configDirectory": "/Users/pcstyle/MMMM/MCF/.claude"
     }
   }
 }

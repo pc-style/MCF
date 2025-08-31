@@ -1,29 +1,34 @@
 {
   "name": "pc-style-mcf-cli",
-  "version": "1.0.1",
-  "description": "CLI tool for MCF (My Claude Flow) installation, configuration and setup",
-  "main": "index.js",
+  "version": "1.0.2",
+  "description": "MCF (My Claude Flow) CLI - Streamlined Claude Code integration with profile management, project automation, and MCP server support",
+  "main": "mcf-standalone-pure.js",
   "bin": {
-    "mcf": "./mcf-standalone-pure.js"
+    "mcf": "mcf-standalone-pure.js"
   },
   "scripts": {
-    "test": "node test-standalone.js",
     "dev": "node mcf-standalone-pure.js",
     "start": "node mcf-standalone-pure.js"
   },
   "keywords": [
     "mcf",
     "claude",
+    "claude-code",
     "development",
     "cli",
     "automation",
-    "framework"
+    "framework",
+    "ai",
+    "productivity",
+    "mcp",
+    "model-context-protocol",
+    "anthropic"
   ],
   "author": "pc-style",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pc-style/MCF.git"
+    "url": "git+https://github.com/pc-style/MCF.git"
   },
   "homepage": "https://github.com/pc-style/MCF",
   "engines": {
