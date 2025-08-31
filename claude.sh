@@ -1,0 +1,1 @@
+export ANTHROPIC_BASE_URL=http://localhost:4141 ANTHROPIC_AUTH_TOKEN=dummy CLAUDE_CONFIG_DIR=$HOME/mcf-dev/.claude ANTHROPIC_MODEL=claude-3.5-sonnet ANTHROPIC_SMALL_FAST_MODEL=grok-code-fast-1 && claude --dangerously-skip-permissions

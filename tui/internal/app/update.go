@@ -1,20 +1,19 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"mcf-dev/tui/internal/ui"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m MCFModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	// Performance tracking
-	now := time.Now().UnixMilli()
-	defer func() {
-		m.lastInteractionTime = now
-	}()
+	// Performance tracking - update immediately
+	m.lastInteractionTime = time.Now().UnixMilli()
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -94,20 +93,78 @@ func (m MCFModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Periodic background updates
 		m.dashboard.Update()
 
-		// Add simulated log entry
-		if time.Now().Unix()%10 == 0 { // Every 10 seconds
-			m.logViewer.AddLog(ui.LogEntry{
-				Timestamp: time.Now(),
-				Level:     "INFO",
-				Component: "system",
-				Message:   "Periodic system check completed",
-			})
+		// Use real MCF data if adapter is available
+		if m.mcfAdapter != nil {
+			// Only update agents and logs on tick, not full dashboard reinit
+			m.updateAgentsFromMCF()
+			m.updateLogsFromMCF()
+
+			// Add periodic system check log entry
+			if time.Now().Unix()%30 == 0 { // Every 30 seconds
+				m.logViewer.AddLog(ui.LogEntry{
+					Timestamp: time.Now(),
+					Level:     "INFO",
+					Component: "mcf-tui",
+					Message:   "Periodic MCF system health check completed",
+				})
+			}
+		} else {
+			// Fallback to mock updates
+			if time.Now().Unix()%10 == 0 { // Every 10 seconds
+				m.logViewer.AddLog(ui.LogEntry{
+					Timestamp: time.Now(),
+					Level:     "INFO",
+					Component: "system",
+					Message:   "Periodic system check completed",
+				})
+			}
 		}
 
+		cmds = append(cmds, tickCmd())
+
+	default:
+		// Handle unknown message types gracefully by returning tick command
 		cmds = append(cmds, tickCmd())
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+// updateAgentsFromMCF updates agent data from the real MCF system
+func (m *MCFModel) updateAgentsFromMCF() {
+	if m.mcfAdapter == nil {
+		return
+	}
+
+	// Get real agents from MCF
+	realAgents := m.mcfAdapter.GetAgents()
+
+	// Update agent list items with current status
+	agentItems := make([]ui.ListItem, len(realAgents))
+	for i, agent := range realAgents {
+		agentItems[i] = ui.ListItem{
+			Title:       agent.Name,
+			Status:      agent.Status,
+			Description: agent.Description,
+		}
+	}
+
+	m.agentsList.SetItems(agentItems)
+}
+
+// updateLogsFromMCF updates log data from the real MCF system
+func (m *MCFModel) updateLogsFromMCF() {
+	if m.mcfAdapter == nil {
+		return
+	}
+
+	// Get recent logs from MCF (last 5 entries to avoid flooding)
+	logs := m.mcfAdapter.GetSystemLogs(5)
+
+	// Add new logs to the viewer
+	for _, entry := range logs {
+		m.logViewer.AddLog(entry)
+	}
 }
 
 func (m *MCFModel) nextView() {
@@ -152,20 +209,55 @@ func (m MCFModel) updateDashboard(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "enter":
-		// Execute selected quick action
+		// Execute selected quick action with real MCF command
 		selected := m.dashboard.GetSelectedQuickAction()
 		if selected >= 0 && selected < len(ui.QuickActions) {
 			action := ui.QuickActions[selected]
 			m.commandInput.AddToHistory(action.Command)
-			// In real implementation, execute the command
 
-			// Add to log
-			m.logViewer.AddLog(ui.LogEntry{
-				Timestamp: time.Now(),
-				Level:     "INFO",
-				Component: "dashboard",
-				Message:   "Executed quick action: " + action.Label,
-			})
+			if m.mcfAdapter != nil {
+				// Execute the real MCF command
+				result, err := m.mcfAdapter.ExecuteCommand(action.Command, []string{})
+
+				if err == nil && result.Success {
+					// Log successful execution
+					m.logViewer.AddLog(ui.LogEntry{
+						Timestamp: time.Now(),
+						Level:     "INFO",
+						Component: "dashboard",
+						Message:   fmt.Sprintf("✓ %s: %s", action.Label, result.Output),
+					})
+
+					// Add to dashboard recent activity
+					m.dashboard.AddRecentActivity("command", action.Command, "Executed successfully")
+				} else {
+					// Log execution error
+					errorMsg := "Unknown error"
+					if err != nil {
+						errorMsg = err.Error()
+					} else if !result.Success {
+						errorMsg = result.Error
+					}
+
+					m.logViewer.AddLog(ui.LogEntry{
+						Timestamp: time.Now(),
+						Level:     "ERROR",
+						Component: "dashboard",
+						Message:   fmt.Sprintf("✗ %s failed: %s", action.Label, errorMsg),
+					})
+
+					// Add to dashboard recent activity
+					m.dashboard.AddRecentActivity("error", action.Command, fmt.Sprintf("Failed: %s", errorMsg))
+				}
+			} else {
+				// Fallback when MCF adapter is not available
+				m.logViewer.AddLog(ui.LogEntry{
+					Timestamp: time.Now(),
+					Level:     "WARN",
+					Component: "dashboard",
+					Message:   fmt.Sprintf("⚠ %s: MCF adapter not available", action.Label),
+				})
+			}
 		}
 
 	case "1", "2", "3", "4", "5", "6":
@@ -194,7 +286,7 @@ func (m MCFModel) updateAgents(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	switch msg.String() {
 	case "s":
-		// Start/stop agent
+		// Toggle agent status (simulated since no real agent:control command exists)
 		selectedAgent := m.agentsList.GetSelectedItem()
 		if selectedAgent != nil {
 			newStatus := "active"
@@ -202,28 +294,30 @@ func (m MCFModel) updateAgents(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				newStatus = "idle"
 			}
 
-			// Update agent status (in real implementation, call actual agent control)
-			items := []ui.ListItem{}
-			for _, item := range []ui.ListItem{
-				{Title: "orchestrator", Status: "active", Description: "Main coordination agent - managing task distribution"},
-				{Title: "frontend-developer", Status: "active", Description: "Building React components and UI interfaces"},
-				{Title: "backend-developer", Status: "idle", Description: "API development and database management"},
-				{Title: "test-engineer", Status: "active", Description: "Running automated tests and quality checks"},
-				{Title: "system-architect", Status: "idle", Description: "System design and architecture planning"},
-				{Title: "go-tui-expert", Status: "active", Description: "Terminal UI development and optimization"},
-			} {
-				if item.Title == selectedAgent.Title {
-					item.Status = newStatus
+			// Since agent:control doesn't exist, simulate the status change
+			// In a real implementation, this would call an actual agent management API
+
+			// Update the agent in the list
+			if m.mcfAdapter != nil {
+				// Find and update the agent status
+				agents := m.mcfAdapter.GetAgents()
+				for _, agent := range agents {
+					if agent.Name == selectedAgent.Title {
+						agent.Status = newStatus
+						agent.LastActive = time.Now()
+						break
+					}
 				}
-				items = append(items, item)
+
+				// Refresh the agents list
+				m.updateAgentsFromMCF()
 			}
-			m.agentsList.SetItems(items)
 
 			m.logViewer.AddLog(ui.LogEntry{
 				Timestamp: time.Now(),
 				Level:     "INFO",
 				Component: "agents",
-				Message:   selectedAgent.Title + " status changed to " + newStatus,
+				Message:   fmt.Sprintf("Agent %s status toggled to %s", selectedAgent.Title, newStatus),
 			})
 		}
 
@@ -249,17 +343,36 @@ func (m MCFModel) updateCommands(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	switch msg.String() {
 	case "enter":
-		// Re-execute command
+		// Re-execute command using real MCF integration
 		selectedCommand := m.commandsList.GetSelectedItem()
-		if selectedCommand != nil {
+		if selectedCommand != nil && m.mcfAdapter != nil {
 			m.commandInput.AddToHistory(selectedCommand.Title)
 
-			m.logViewer.AddLog(ui.LogEntry{
-				Timestamp: time.Now(),
-				Level:     "INFO",
-				Component: "commands",
-				Message:   "Re-executed: " + selectedCommand.Title,
-			})
+			// Execute the real MCF command
+			result, err := m.mcfAdapter.ExecuteCommand(selectedCommand.Title, []string{})
+
+			if err == nil && result.Success {
+				m.logViewer.AddLog(ui.LogEntry{
+					Timestamp: time.Now(),
+					Level:     "INFO",
+					Component: "commands",
+					Message:   fmt.Sprintf("Executed: %s - %s", selectedCommand.Title, result.Output),
+				})
+			} else {
+				errorMsg := "Unknown error"
+				if err != nil {
+					errorMsg = err.Error()
+				} else if !result.Success {
+					errorMsg = result.Error
+				}
+
+				m.logViewer.AddLog(ui.LogEntry{
+					Timestamp: time.Now(),
+					Level:     "ERROR",
+					Component: "commands",
+					Message:   fmt.Sprintf("Failed to execute %s: %s", selectedCommand.Title, errorMsg),
+				})
+			}
 		}
 
 	case "d":

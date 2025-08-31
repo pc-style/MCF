@@ -49,49 +49,65 @@ type Dashboard struct {
 
 func NewDashboard(theme *Theme) *Dashboard {
 	return &Dashboard{
-		theme: theme,
-		systemHealth: SystemHealth{
-			MCFVersion:   "v1.0.0",
-			Uptime:       time.Hour * 2,
-			MemoryUsage:  45.2,
-			CPUUsage:     12.8,
-			DiskUsage:    67.4,
-			ActiveAgents: 3,
-			TotalAgents:  5,
-			SerenaStatus: "connected",
-			ClaudeStatus: "active",
-		},
-		agentStatuses: []AgentStatus{
-			{"orchestrator", "active", time.Now().Add(-5 * time.Minute), 2, 15},
-			{"frontend-developer", "active", time.Now().Add(-2 * time.Minute), 1, 8},
-			{"backend-developer", "idle", time.Now().Add(-10 * time.Minute), 0, 12},
-			{"test-engineer", "active", time.Now().Add(-1 * time.Minute), 1, 6},
-			{"system-architect", "idle", time.Now().Add(-30 * time.Minute), 0, 3},
-		},
-		recentActivity: []RecentActivity{
-			{time.Now().Add(-2 * time.Minute), "command", "mcf agents status", "Command executed successfully"},
-			{time.Now().Add(-5 * time.Minute), "agent", "frontend-developer started task", "Building React components"},
-			{time.Now().Add(-8 * time.Minute), "info", "System health check passed", "All systems operational"},
-			{time.Now().Add(-12 * time.Minute), "command", "mcf deploy --stage dev", "Deployment initiated"},
-			{time.Now().Add(-15 * time.Minute), "agent", "test-engineer completed task", "Unit tests passed (98% coverage)"},
-		},
-		commandHistory: []string{
-			"mcf agents status",
-			"mcf serena start",
-			"mcf deploy --stage dev",
-			"mcf test --coverage",
-			"mcf logs tail -f",
-		},
-		lastRefresh: time.Now(),
+		theme:               theme,
+		systemHealth:        SystemHealth{},
+		agentStatuses:       []AgentStatus{},
+		recentActivity:      []RecentActivity{},
+		commandHistory:      []string{},
+		selectedQuickAction: 0,
+		showHelp:            false,
+		lastRefresh:         time.Now(),
 	}
 }
 
 func (d *Dashboard) Update() {
 	d.lastRefresh = time.Now()
-	// In real implementation, fetch actual system data
-	d.systemHealth.Uptime += time.Since(d.lastRefresh)
-	d.systemHealth.MemoryUsage = 45.2 + (float64(time.Now().Second()%10) - 5)
-	d.systemHealth.CPUUsage = 12.8 + (float64(time.Now().Second()%20) - 10)
+	// Real data will be updated via UpdateWithMCFData
+}
+
+// SetSystemHealth updates system health with real data
+func (d *Dashboard) SetSystemHealth(version string, serenaStatus string, activeAgents, totalAgents int) {
+	d.systemHealth = SystemHealth{
+		MCFVersion:   version,
+		Uptime:       time.Since(time.Now().Add(-2 * time.Hour)), // TODO: Get real uptime
+		MemoryUsage:  0,                                          // TODO: Get real system metrics
+		CPUUsage:     0,
+		DiskUsage:    0,
+		ActiveAgents: activeAgents,
+		TotalAgents:  totalAgents,
+		SerenaStatus: serenaStatus,
+		ClaudeStatus: "active", // TODO: Get real Claude status
+	}
+}
+
+// SetAgentStatuses updates agent statuses with real data
+func (d *Dashboard) SetAgentStatuses(agentStatuses []AgentStatus) {
+	d.agentStatuses = agentStatuses
+}
+
+// AddRecentActivity adds a new activity entry
+func (d *Dashboard) AddRecentActivity(activityType, message, details string) {
+	activity := RecentActivity{
+		Timestamp: time.Now(),
+		Type:      activityType,
+		Message:   message,
+		Details:   details,
+	}
+
+	// Add to beginning and limit to 10 entries
+	d.recentActivity = append([]RecentActivity{activity}, d.recentActivity...)
+	if len(d.recentActivity) > 10 {
+		d.recentActivity = d.recentActivity[:10]
+	}
+}
+
+// SetCommandHistory updates command history with real commands
+func (d *Dashboard) SetCommandHistory(commands []string) {
+	d.commandHistory = commands
+	// Limit to last 5 commands
+	if len(d.commandHistory) > 5 {
+		d.commandHistory = d.commandHistory[:5]
+	}
 }
 
 func (d *Dashboard) SetSelectedQuickAction(idx int) {
@@ -199,6 +215,10 @@ func (d *Dashboard) renderRecentActivity(width, height int) string {
 	content += d.theme.Subtitle.Render("Recent Activity") + "\n\n"
 
 	maxItems := (height - 6) // Account for title and padding
+	if maxItems < 1 {
+		maxItems = 1 // Ensure at least 1 item can be shown
+	}
+
 	items := d.recentActivity
 	if len(items) > maxItems {
 		items = items[:maxItems]

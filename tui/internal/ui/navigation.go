@@ -164,12 +164,12 @@ type QuickAction struct {
 }
 
 var QuickActions = []QuickAction{
-	{"1", "Agents Status", "View all agent statuses", "mcf agents status"},
-	{"2", "Start Serena", "Start Serena integration", "mcf serena start"},
-	{"3", "Run Tests", "Execute test suite", "mcf test"},
-	{"4", "Deploy", "Deploy application", "mcf deploy"},
-	{"5", "Logs", "View recent logs", "mcf logs tail"},
-	{"6", "Health Check", "System health check", "mcf health"},
+	{"1", "Serena Status", "Check Serena integration status", "serena:status"},
+	{"2", "Start Serena", "Initialize Serena integration", "serena:init"},
+	{"3", "Auto Team", "Launch automatic development team", "agent:auto"},
+	{"4", "Deploy", "Deploy application", "project:deploy"},
+	{"5", "System Health", "Check orchestration status", "orchestration:status"},
+	{"6", "Context Analysis", "Analyze project context", "project:analyze"},
 }
 
 func (n *Navigation) RenderQuickActions(selectedIdx int) string {

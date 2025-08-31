@@ -1,11 +1,16 @@
 package app
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
+
+	"mcf-dev/tui/internal/mcf"
+	"mcf-dev/tui/internal/ui"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"mcf-dev/tui/internal/ui"
 )
 
 // Application model
@@ -14,6 +19,9 @@ type MCFModel struct {
 	ready  bool
 	width  int
 	height int
+
+	// MCF integration
+	mcfAdapter *mcf.MCFAdapter
 
 	// UI components
 	theme        *ui.Theme
@@ -36,16 +44,25 @@ func InitialModel() MCFModel {
 	navigation := ui.NewNavigation(theme)
 	dashboard := ui.NewDashboard(theme)
 
+	// Initialize MCF adapter
+	mcfRoot := findMCFRoot()
+	mcfAdapter, err := mcf.NewMCFAdapter(mcfRoot)
+	if err != nil {
+		// Fallback to mock data if MCF adapter fails
+		mcfAdapter = nil
+	}
+
 	// Initialize components
 	agentsList := ui.NewInteractiveList(theme, "Agents", 20)
 	commandsList := ui.NewInteractiveList(theme, "Command History", 20)
 	logViewer := ui.NewLogViewer(theme, 20)
 	commandInput := ui.NewCommandInput(theme)
 
-	// Setup initial data
-	setupInitialData(agentsList, commandsList, logViewer)
+	// Setup initial data (will use real MCF data if adapter is available)
+	setupInitialData(agentsList, commandsList, logViewer, mcfAdapter)
 
-	return MCFModel{
+	model := MCFModel{
+		mcfAdapter:   mcfAdapter,
 		theme:        theme,
 		navigation:   navigation,
 		dashboard:    dashboard,
@@ -55,10 +72,72 @@ func InitialModel() MCFModel {
 		commandInput: commandInput,
 		showHelp:     false,
 	}
+
+	// Initialize dashboard with real MCF data
+	if mcfAdapter != nil {
+		updateDashboardWithRealData(&model)
+	}
+
+	return model
 }
 
-func setupInitialData(agentsList *ui.InteractiveList, commandsList *ui.InteractiveList, logViewer *ui.LogViewer) {
-	// Setup agents data
+func setupInitialData(agentsList *ui.InteractiveList, commandsList *ui.InteractiveList, logViewer *ui.LogViewer, mcfAdapter *mcf.MCFAdapter) {
+	if mcfAdapter != nil {
+		// Use real MCF data
+		setupRealData(agentsList, commandsList, logViewer, mcfAdapter)
+	} else {
+		// Fallback to mock data
+		setupMockData(agentsList, commandsList, logViewer)
+	}
+}
+
+func setupRealData(agentsList *ui.InteractiveList, commandsList *ui.InteractiveList, logViewer *ui.LogViewer, mcfAdapter *mcf.MCFAdapter) {
+	// Setup real agents data from MCF
+	realAgents := mcfAdapter.GetAgents()
+	agentItems := make([]ui.ListItem, len(realAgents))
+	for i, agent := range realAgents {
+		agentItems[i] = ui.ListItem{
+			Title:       agent.Name,
+			Status:      agent.Status,
+			Description: agent.Description,
+		}
+	}
+	agentsList.SetItems(agentItems)
+
+	// Setup real commands data from MCF
+	commandsByCategory := mcfAdapter.GetCommandsByCategory()
+	commandItems := []ui.ListItem{}
+
+	// Add commands from each category
+	for _, cmds := range commandsByCategory {
+		for _, cmd := range cmds {
+			commandItems = append(commandItems, ui.ListItem{
+				Title:       cmd.Name,
+				Status:      "available",
+				Description: cmd.Description,
+			})
+		}
+	}
+
+	// If no commands found, add some defaults
+	if len(commandItems) == 0 {
+		commandItems = []ui.ListItem{
+			{Title: "serena:status", Status: "available", Description: "Check Serena integration status"},
+			{Title: "orchestration:status", Status: "available", Description: "Check orchestration system status"},
+			{Title: "agent:status", Status: "available", Description: "Check agent statuses"},
+		}
+	}
+	commandsList.SetItems(commandItems)
+
+	// Add real system logs from MCF
+	logs := mcfAdapter.GetSystemLogs(10)
+	for _, entry := range logs {
+		logViewer.AddLog(entry)
+	}
+}
+
+func setupMockData(agentsList *ui.InteractiveList, commandsList *ui.InteractiveList, logViewer *ui.LogViewer) {
+	// Setup agents data (fallback mock data)
 	agentItems := []ui.ListItem{
 		{Title: "orchestrator", Status: "active", Description: "Main coordination agent - managing task distribution"},
 		{Title: "frontend-developer", Status: "active", Description: "Building React components and UI interfaces"},
@@ -69,7 +148,7 @@ func setupInitialData(agentsList *ui.InteractiveList, commandsList *ui.Interacti
 	}
 	agentsList.SetItems(agentItems)
 
-	// Setup command history
+	// Setup command history (fallback mock data)
 	commandItems := []ui.ListItem{
 		{Title: "mcf agents status", Description: "Check status of all agents"},
 		{Title: "mcf serena start", Description: "Start Serena integration service"},
@@ -79,7 +158,7 @@ func setupInitialData(agentsList *ui.InteractiveList, commandsList *ui.Interacti
 	}
 	commandsList.SetItems(commandItems)
 
-	// Add sample log entries
+	// Add sample log entries (fallback mock data)
 	now := time.Now()
 	sampleLogs := []ui.LogEntry{
 		{Timestamp: now.Add(-10 * time.Minute), Level: "INFO", Component: "orchestrator", Message: "MCF system initialized successfully"},
@@ -93,6 +172,115 @@ func setupInitialData(agentsList *ui.InteractiveList, commandsList *ui.Interacti
 	for _, entry := range sampleLogs {
 		logViewer.AddLog(entry)
 	}
+}
+
+// findMCFRoot attempts to find the MCF project root directory
+func findMCFRoot() string {
+	// Start from current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "/Users/pcstyle/mcf-dev" // fallback
+	}
+
+	// Walk up the directory tree looking for .claude directory
+	current := cwd
+	for {
+		claudeDir := filepath.Join(current, ".claude")
+		if _, err := os.Stat(claudeDir); err == nil {
+			return current
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			// Reached root directory
+			break
+		}
+		current = parent
+	}
+
+	// Fallback to known path
+	return "/Users/pcstyle/mcf-dev"
+}
+
+// updateDashboardWithRealData populates dashboard with real MCF data
+func updateDashboardWithRealData(model *MCFModel) {
+	if model.mcfAdapter == nil {
+		return
+	}
+
+	// Get real system info
+	version := model.mcfAdapter.GetVersion()
+	if version == "" || version == "unknown" {
+		version = "MCF Development"
+	}
+
+	serenaStatus := model.mcfAdapter.GetSerenaStatus()
+
+	// Get real agent data
+	agents := model.mcfAdapter.GetAgents()
+	activeCount := 0
+	agentStatuses := []ui.AgentStatus{}
+
+	for _, agent := range agents {
+		if agent.Status == "active" {
+			activeCount++
+		}
+
+		// Convert MCF agent to dashboard agent status
+		agentStatus := ui.AgentStatus{
+			Name:        agent.Name,
+			Status:      agent.Status,
+			LastSeen:    agent.LastActive,
+			TasksActive: 0, // TODO: Get real task data
+			TasksTotal:  0,
+		}
+		agentStatuses = append(agentStatuses, agentStatus)
+	}
+
+	// Update dashboard with real data
+	model.dashboard.SetSystemHealth(version, serenaStatus, activeCount, len(agents))
+	model.dashboard.SetAgentStatuses(agentStatuses)
+
+	// Get real command history from discovered Claude commands
+	commands := model.mcfAdapter.GetCommands()
+	commandNames := []string{}
+
+	// Prioritize common Claude commands
+	priorityCommands := []string{"agent:auto", "serena:init", "project:analyze", "orchestration:status", "project:deploy"}
+
+	for _, priority := range priorityCommands {
+		if _, exists := commands[priority]; exists {
+			commandNames = append(commandNames, priority)
+		}
+		if len(commandNames) >= 5 {
+			break
+		}
+	}
+
+	// Fill remaining slots with other discovered commands
+	if len(commandNames) < 5 {
+		for name := range commands {
+			// Skip if already added
+			found := false
+			for _, existing := range commandNames {
+				if existing == name {
+					found = true
+					break
+				}
+			}
+			if !found {
+				commandNames = append(commandNames, name)
+				if len(commandNames) >= 5 {
+					break
+				}
+			}
+		}
+	}
+
+	model.dashboard.SetCommandHistory(commandNames)
+
+	// Add initial activity (only once during initialization)
+	model.dashboard.AddRecentActivity("info", "MCF TUI started", fmt.Sprintf("Loaded %d agents, %d commands", len(agents), len(commands)))
 }
 
 func (m MCFModel) Init() tea.Cmd {
@@ -180,6 +368,11 @@ func (m MCFModel) renderContent() string {
 	contentWidth := m.width
 	contentHeight := m.height - 8 // Account for header and footer
 
+	// Ensure minimum height to prevent crashes
+	if contentHeight < 10 {
+		contentHeight = 10
+	}
+
 	switch currentView {
 	case ui.DashboardView:
 		return m.dashboard.Render(contentWidth, contentHeight)
@@ -260,28 +453,79 @@ func (m MCFModel) renderCommandsView(width, height int) string {
 func (m MCFModel) renderConfigView(width, height int) string {
 	content := m.theme.Title.Render("MCF Configuration") + "\n\n"
 
-	// Configuration sections
-	content += m.theme.Subtitle.Render("System Settings") + "\n"
-	content += m.theme.Body.Render("• MCF Version: v1.0.0") + "\n"
-	content += m.theme.Body.Render("• Working Directory: /Users/pcstyle/mcf-dev") + "\n"
-	content += m.theme.Body.Render("• Log Level: INFO") + "\n"
-	content += m.theme.Body.Render("• Auto-refresh: Enabled (5s)") + "\n\n"
+	if m.mcfAdapter != nil {
+		// Real configuration from MCF
+		settings := m.mcfAdapter.GetSettings()
 
-	content += m.theme.Subtitle.Render("Agent Configuration") + "\n"
-	content += m.theme.Body.Render("• Default Agent Timeout: 300s") + "\n"
-	content += m.theme.Body.Render("• Max Concurrent Tasks: 5") + "\n"
-	content += m.theme.Body.Render("• Task Queue Size: 100") + "\n\n"
+		// System Settings
+		content += m.theme.Subtitle.Render("System Settings") + "\n"
+		version := "unknown"
+		if settings != nil {
+			version = settings.Version
+		}
+		if version == "" {
+			version = m.mcfAdapter.GetVersion()
+		}
+		content += m.theme.Body.Render("• MCF Version: "+version) + "\n"
+		content += m.theme.Body.Render("• Working Directory: "+findMCFRoot()) + "\n"
 
-	content += m.theme.Subtitle.Render("Serena Integration") + "\n"
-	content += m.theme.Body.Render("• Status: ") + ui.RenderStatusIndicator("connected", m.theme) + "\n"
-	content += m.theme.Body.Render("• API Endpoint: https://api.serena.local") + "\n"
-	content += m.theme.Body.Render("• Sync Interval: 60s") + "\n\n"
+		if settings != nil {
+			content += m.theme.Body.Render("• Output Style: "+settings.OutputStyle) + "\n"
+		}
+		content += m.theme.Body.Render("• Auto-refresh: Enabled (5s)") + "\n\n"
+
+		// Agent Configuration
+		content += m.theme.Subtitle.Render("Agent Configuration") + "\n"
+		agents := m.mcfAdapter.GetAgents()
+		content += m.theme.Body.Render(fmt.Sprintf("• Total Agents: %d", len(agents))) + "\n"
+
+		activeCount := 0
+		for _, agent := range agents {
+			if agent.Status == "active" {
+				activeCount++
+			}
+		}
+		content += m.theme.Body.Render(fmt.Sprintf("• Active Agents: %d", activeCount)) + "\n"
+		content += m.theme.Body.Render(fmt.Sprintf("• Available Agents: %d", len(agents)-activeCount)) + "\n\n"
+
+		// Serena Integration
+		content += m.theme.Subtitle.Render("Serena Integration") + "\n"
+		serenaStatus := m.mcfAdapter.GetSerenaStatus()
+		content += m.theme.Body.Render("• Status: ") + ui.RenderStatusIndicator(serenaStatus, m.theme) + "\n"
+
+		if serenaAdapter := m.mcfAdapter.GetSerenaAdapter(); serenaAdapter != nil {
+			if serenaAdapter.IsEnabled() {
+				content += m.theme.Body.Render("• Host: localhost:8080") + "\n"
+				content += m.theme.Body.Render("• Service: Available") + "\n"
+			} else {
+				content += m.theme.Body.Render("• Service: Not available") + "\n"
+			}
+		}
+		content += "\n"
+
+		// Commands
+		commands := m.mcfAdapter.GetCommands()
+		commandsByCategory := m.mcfAdapter.GetCommandsByCategory()
+		content += m.theme.Subtitle.Render("Commands") + "\n"
+		content += m.theme.Body.Render(fmt.Sprintf("• Total Commands: %d", len(commands))) + "\n"
+		content += m.theme.Body.Render(fmt.Sprintf("• Categories: %d", len(commandsByCategory))) + "\n\n"
+	} else {
+		// Fallback configuration display
+		content += m.theme.Subtitle.Render("System Settings") + "\n"
+		content += m.theme.Body.Render("• MCF Version: v1.0.0 (fallback)") + "\n"
+		content += m.theme.Body.Render("• Working Directory: "+findMCFRoot()) + "\n"
+		content += m.theme.Body.Render("• Log Level: INFO") + "\n"
+		content += m.theme.Body.Render("• Auto-refresh: Enabled (5s)") + "\n\n"
+
+		content += m.theme.Subtitle.Render("Status") + "\n"
+		content += m.theme.Body.Render("• MCF Integration: ") + ui.RenderStatusIndicator("disconnected", m.theme) + "\n"
+		content += m.theme.Body.Render("• Serena Integration: ") + ui.RenderStatusIndicator("disconnected", m.theme) + "\n\n"
+	}
 
 	content += m.theme.Subtitle.Render("Actions") + "\n"
-	content += m.theme.ListItem.Render("e - Edit Configuration") + "\n"
 	content += m.theme.ListItem.Render("r - Reload Configuration") + "\n"
-	content += m.theme.ListItem.Render("b - Backup Configuration") + "\n"
-	content += m.theme.ListItem.Render("d - Reset to Defaults") + "\n"
+	content += m.theme.ListItem.Render("s - Show Settings File") + "\n"
+	content += m.theme.ListItem.Render("h - Show Hooks Configuration") + "\n"
 
 	return ui.RenderBox(content, "", width, height, m.theme)
 }

@@ -487,7 +487,7 @@ func TestMCFModelUpdate_Integration(t *testing.T) {
 
 		// Navigate through all views
 		views := []ui.View{ui.AgentsView, ui.CommandsView, ui.LogsView, ui.ConfigView}
-		for _, view := range views {
+		for range views {
 			tabMsg := tea.KeyMsg{Type: tea.KeyTab}
 			newModel, _ := model.Update(tabMsg)
 			model = newModel.(MCFModel)
